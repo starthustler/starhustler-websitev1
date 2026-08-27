@@ -1,0 +1,4 @@
+- [x] Read and catalogue every exact copy string supplied in the uploaded prompt and screenshot.
+- [x] Remove custom-written text that is not explicitly supplied.
+- [x] Replace page labels and section content using the supplied wording only.
+- [x] Verify the updated page compiles and renders correctly.

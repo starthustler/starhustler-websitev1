@@ -1,12 +1,8 @@
 // StarHustler style contract: the footer continues the confident navy campaign field with compact practical pathways and white type.
-import { Instagram, Linkedin, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Instagram, Linkedin, Mail, MapPin, Youtube } from "lucide-react";
 import { BrandLogo } from "./BrandLogo.jsx";
 
-const columns = [
-  { title: "Quick Link", links: ["Beranda", "Kelas Online", "Mentor", "Blog"] },
-  { title: "Company", links: ["Tentang Kami", "Company Training", "Hubungi Kami", "Kebijakan Privasi"] },
-  { title: "Social", links: ["Instagram", "LinkedIn", "YouTube", "TikTok"] },
-];
+const columns = [{ title: "Quick Link", links: ["Beranda", "Kelas", "Blog", "Community", "Tentang Kami", "Company Training"] }];
 
 export default function Footer() {
   return (
@@ -14,19 +10,19 @@ export default function Footer() {
       <div className="footer-shell">
         <div className="footer-intro">
           <BrandLogo light />
-          <p>Komunitas belajar AI yang membantu solopreneur mengubah ide menjadi bisnis yang bergerak.</p>
+          <p>“Human Creates The Vision, AI Handles The Execution”</p>
           <form className="footer-subscribe" onSubmit={(event) => event.preventDefault()}>
-            <label className="sr-only" htmlFor="footer-email">Alamat email</label>
-            <input id="footer-email" type="email" placeholder="Email kamu" />
-            <button type="submit" aria-label="Daftar newsletter"><Mail size={16} /></button>
+            <label className="sr-only" htmlFor="footer-email">Email Address</label>
+            <input id="footer-email" type="email" placeholder="Email Address" />
+            <button type="submit" aria-label="Subscribe">Subscribe</button>
           </form>
         </div>
         <div className="footer-contact">
           <h3>Get in Touch</h3>
-          <p><MapPin size={16} /> Jakarta, Indonesia</p>
-          <p><Phone size={16} /> +62 811 2040 824</p>
-          <p><Mail size={16} /> hello@starhustler.id</p>
-          <div className="social-row" aria-label="Sosial media">
+          <p><Mail size={16} /> hello@starthustler.com</p>
+          <p><MapPin size={16} /> Jl. Kemang Utara No. 19A, Kec. Mampang Prapatan Kota Jakarta Selatan, Daerah Khusus Ibukota Jakarta</p>
+          <h3>Social Media</h3>
+          <div className="social-row" aria-label="Social Media">
             <a href="#instagram" aria-label="Instagram"><Instagram size={17} /></a>
             <a href="#linkedin" aria-label="LinkedIn"><Linkedin size={17} /></a>
             <a href="#youtube" aria-label="YouTube"><Youtube size={18} /></a>
@@ -39,7 +35,7 @@ export default function Footer() {
           </div>
         ))}
       </div>
-      <div className="footer-copyright">© 2026 StarHustler. All rights reserved.</div>
+      <div className="footer-copyright">Copyright © Starthustler all rights reserved.</div>
     </footer>
   );
 }
