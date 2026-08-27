@@ -48,3 +48,5 @@
 - [x] Generate a book-and-device mockup that matches the ebook section.
 - [x] Replace the existing abstract book stack with the branded ebook design.
 - [x] Verify the redesigned ebook section at desktop and mobile sizes.
+- [x] Set both comparison portraits to a clear half-body framing.
+- [x] Verify the tighter portrait framing at desktop and mobile sizes.
