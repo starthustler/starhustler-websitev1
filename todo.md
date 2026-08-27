@@ -8,3 +8,6 @@
 - [x] Increase the shared brand icon to Canva’s 40 px minimum.
 - [x] Scale the shared wordmark to preserve lockup balance.
 - [x] Verify the enlarged logos in header and footer.
+- [x] Upload the supplied StarHustler SVG for use as a shared static asset.
+- [x] Replace the current header and footer logo lockup with the supplied SVG.
+- [x] Verify the replacement at desktop and mobile sizes.
