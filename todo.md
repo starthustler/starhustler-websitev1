@@ -41,3 +41,6 @@
 - [x] Source the ChatGPT, Claude, Cursor, Lovable, and Higgsfield marks.
 - [x] Replace the ecosystem strip’s logo approximations with brand mark assets.
 - [x] Verify the revised ecosystem strip at desktop and mobile sizes.
+- [x] Generate a bright woman office portrait that fits the white FAQ section.
+- [x] Replace the current dark FAQ portrait with the new bright portrait asset.
+- [x] Verify the revised FAQ portrait at desktop and mobile sizes.
