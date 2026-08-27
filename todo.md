@@ -35,3 +35,6 @@
 - [x] Upload the supplied Andre and Septianus images as approved website assets.
 - [x] Use Andre for the About-section back portrait and Septianus for the overlapping front portrait.
 - [x] Verify the revised About-section composition at desktop and mobile sizes.
+- [x] Generate full Japanese male and female office portrait assets for the comparison section.
+- [x] Replace the cropped comparison images with the new full portrait assets.
+- [x] Verify the repaired comparison composition at desktop and mobile sizes.
