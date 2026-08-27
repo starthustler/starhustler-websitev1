@@ -25,7 +25,7 @@ export default function Footer() {
           <h3>Social Media</h3>
           <div className="social-row" aria-label="Social Media">
             <a href="#instagram" aria-label="Instagram"><Instagram size={17} /></a>
-            <a href="#linkedin" aria-label="LinkedIn"><Linkedin size={17} /></a>
+            <a href="https://www.linkedin.com/company/starthustler" target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin size={17} /></a>
             <a href="#youtube" aria-label="YouTube"><Youtube size={18} /></a>
           </div>
         </div>
