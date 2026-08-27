@@ -5,3 +5,6 @@
 - [x] Increase the footer subscriber box size and visual weight.
 - [x] Reorganize the footer Quick Link section for clean scanning.
 - [x] Verify the revised footer at desktop and mobile breakpoints.
+- [x] Increase the shared brand icon to Canva’s 40 px minimum.
+- [x] Scale the shared wordmark to preserve lockup balance.
+- [x] Verify the enlarged logos in header and footer.
