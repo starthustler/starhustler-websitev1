@@ -44,3 +44,7 @@
 - [x] Generate a bright woman office portrait that fits the white FAQ section.
 - [x] Replace the current dark FAQ portrait with the new bright portrait asset.
 - [x] Verify the revised FAQ portrait at desktop and mobile sizes.
+- [x] Define the StarHustler ebook cover title, author, and visual system.
+- [x] Generate a book-and-device mockup that matches the ebook section.
+- [x] Replace the existing abstract book stack with the branded ebook design.
+- [x] Verify the redesigned ebook section at desktop and mobile sizes.
