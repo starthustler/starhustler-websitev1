@@ -7,6 +7,7 @@ import SectionHeading from "../components/SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "../components/PrimaryButton.jsx";
 
 const ASSETS = { hero: "/manus-storage/starhustler-hero-founder_7e51a4c1.png", about: "/manus-storage/starhustler-about-founders_9d74897f.png", andre: "/manus-storage/andre-founder_a326359d.svg", septianus: "/manus-storage/septianus-founder_fe165f47.svg", maleOffice: "/manus-storage/starhustler-japanese-male-office_b8ef0e79.png", femaleOffice: "/manus-storage/starhustler-japanese-female-office_e90ae59e.png", benefit: "/manus-storage/starhustler-benefits-mentor_fdf27b2f.png", courses: "/manus-storage/starhustler-course-creators_4af6efe2.png" };
+const PARTNER_LOGOS = { ChatGPT: "/manus-storage/chatgpt_2f93ed0f.png", Claude: "/manus-storage/claude_febe1a79.png", Cursor: "/manus-storage/cursor_7e8b7fa2.png", Lovable: "/manus-storage/lovable_a9d88ba1.png", Higgsfield: "/manus-storage/higgsfield_f82249bd.png" };
 const programs = [
   { icon: GraduationCap, title: "Personal Branding" },
   { icon: Users, title: "AI Vibe Coding" },
@@ -38,7 +39,7 @@ const faqs = [
   ["Apakah ada pendampingan setelah kelas selesai?", "Ada. Kamu tetap menjadi bagian dari komunitas Starthustler dan bisa terus bertanya, berdiskusi, serta mengikuti update materi terbaru."],
 ];
 
-function SmallLogo({ label, mark }) { return <div className="partner-logo"><span>{mark}</span><b>{label}</b></div>; }
+function SmallLogo({ label, src }) { return <div className="partner-logo"><img src={src} alt="" aria-hidden="true" /><b>{label}</b></div>; }
 function OrbitDot({ icon: Icon, title, text, position }) { return <article className={`orbit-dot ${position}`}><span className="orbit-dot__icon"><Icon size={19} /></span><div><h3>{title}</h3><p>{text}</p></div></article>; }
 
 export default function Home() {
@@ -64,7 +65,7 @@ export default function Home() {
           <svg className="hero-wave" viewBox="0 0 1440 86" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,53 C225,100 410,11 658,54 C903,96 1123,16 1440,56 L1440,86 L0,86 Z" /></svg>
         </section>
 
-        <section className="partner-strip" aria-label="Ekosistem AI yang Akan Kamu Kuasai"><div className="partner-shell"><div><h2>Ekosistem AI yang Akan Kamu Kuasai</h2><p>Bayar Sekali, Belajar dengan Tools yang Sama Dipakai Praktisi</p><small>Starthustler membekali kamu dengan tools AI dan infrastruktur yang dipakai solopreneur profesional untuk membangun serta menjalankan bisnisnya sendiri</small></div><div className="partners"><SmallLogo mark="◉" label="ChatGPT" /><SmallLogo mark="✣" label="Claude" /><SmallLogo mark="▰" label="CURSOR" /><SmallLogo mark="◆" label="Lovable" /><SmallLogo mark="✹" label="Higgsfield" /></div></div></section>
+        <section className="partner-strip" aria-label="Ekosistem AI yang Akan Kamu Kuasai"><div className="partner-shell"><div><h2>Ekosistem AI yang Akan Kamu Kuasai</h2><p>Bayar Sekali, Belajar dengan Tools yang Sama Dipakai Praktisi</p><small>Starthustler membekali kamu dengan tools AI dan infrastruktur yang dipakai solopreneur profesional untuk membangun serta menjalankan bisnisnya sendiri</small></div><div className="partners"><SmallLogo src={PARTNER_LOGOS.ChatGPT} label="ChatGPT" /><SmallLogo src={PARTNER_LOGOS.Claude} label="Claude" /><SmallLogo src={PARTNER_LOGOS.Cursor} label="Cursor" /><SmallLogo src={PARTNER_LOGOS.Lovable} label="Lovable" /><SmallLogo src={PARTNER_LOGOS.Higgsfield} label="Higgsfield" /></div></div></section>
 
         <section className="about section-shell" id="tentang">
           <div className="about-visual"><div className="about-image about-image--primary"><img src={ASSETS.andre} alt="Andre Elausta Tuwan" /></div><div className="about-image about-image--cutout"><img src={ASSETS.septianus} alt="Septianus Angga" /></div><span className="about-dot" aria-hidden="true" /></div>

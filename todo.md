@@ -38,3 +38,6 @@
 - [x] Generate full Japanese male and female office portrait assets for the comparison section.
 - [x] Replace the cropped comparison images with the new full portrait assets.
 - [x] Verify the repaired comparison composition at desktop and mobile sizes.
+- [x] Source the ChatGPT, Claude, Cursor, Lovable, and Higgsfield marks.
+- [x] Replace the ecosystem strip’s logo approximations with brand mark assets.
+- [x] Verify the revised ecosystem strip at desktop and mobile sizes.
