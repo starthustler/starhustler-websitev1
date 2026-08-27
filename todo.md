@@ -11,3 +11,6 @@
 - [x] Upload the supplied StarHustler SVG for use as a shared static asset.
 - [x] Replace the current header and footer logo lockup with the supplied SVG.
 - [x] Verify the replacement at desktop and mobile sizes.
+- [x] Replace Plus Jakarta Sans with Open Sans in the shared typography system.
+- [x] Preserve Poppins for headings and display elements.
+- [x] Verify the revised typography at desktop and mobile sizes.
