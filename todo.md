@@ -23,3 +23,5 @@
 - [x] Audit all current text styles for undersized desktop and mobile usage.
 - [x] Increase supporting text, labels, cards, and FAQ copy to readable minimum sizes.
 - [x] Verify the repaired typography across the full page at desktop and mobile sizes.
+- [x] Increase the gap between the hero headline and quotation.
+- [x] Verify the updated hero spacing at desktop and mobile sizes.
