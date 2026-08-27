@@ -50,3 +50,7 @@
 - [x] Verify the redesigned ebook section at desktop and mobile sizes.
 - [x] Set both comparison portraits to a clear half-body framing.
 - [x] Verify the tighter portrait framing at desktop and mobile sizes.
+- [x] Compare the Kelas route against the homepage Daftar Kelas Online section.
+- [x] Reuse the homepage course catalogue as the Kelas page source.
+- [x] Route the homepage Lihat Lainnya action to the Kelas page.
+- [x] Verify the course-page content and routing at desktop and mobile sizes.

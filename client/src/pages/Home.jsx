@@ -1,8 +1,9 @@
 // StarHustler style contract: build an asymmetric, portrait-led Indonesian edtech narrative in navy, white, black, and electric blue.
 import { useState } from "react";
-import { ArrowRight, BookOpen, BookMarked, Bot, BriefcaseBusiness, Check, ChevronDown, CircleCheck, Crown, GraduationCap, Layers3, MessageCircle, PanelTop, Quote, Rocket, Send, Sparkles, Users, UsersRound } from "lucide-react";
+import { BookOpen, BookMarked, BriefcaseBusiness, Check, ChevronDown, CircleCheck, Crown, GraduationCap, Layers3, MessageCircle, Quote, Rocket, Send, Sparkles, Users, UsersRound } from "lucide-react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
+import CourseCatalogue from "../components/CourseCatalogue.jsx";
 import SectionHeading from "../components/SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "../components/PrimaryButton.jsx";
 
@@ -22,11 +23,6 @@ const benefits = [
   ["Update Materi Setiap Bulan", "Tools dan strategi AI berkembang cepat, kamu selalu dapat versi terbaru", Sparkles],
   ["Praktek dengan Study Case", "Kamu langsung membangun produk dan sistem bisnis selama belajar", Layers3],
   ["Peluang Kolaborasi Sesama Member", "Terbuka kesempatan kerja sama dengan member dan mitra Starthustler lainnya", Rocket],
-];
-const courses = [
-  { heading: "Solopreneur Class", title: "Solopreneur Class: Dari Ide Sampai Terjual", instructor: "Andre Tuwan, Abdul Arfan, Septianus", icon: Rocket, position: "0% center" },
-  { heading: "Cara Setup Hermes Agent", title: "Cara Setup Hermes Agent", instructor: "Dhiya Fakhar Nafi", icon: Bot, position: "50% center" },
-  { heading: "Membuat Konten Media Sosial dengan AI", title: "Membuat Konten Media Sosial dengan AI", instructor: "Filbert", icon: PanelTop, position: "100% center" },
 ];
 const checklist = ["Kurikulum yang terstruktur", "Mentorship langsung dari praktisi", "Webinar skill baru tiap bulan", "Komunitas yang saling suportif", "Studi kasus dari bisnis yang nyata", "Selalu update AI tools terbaru", "Belajar personal branding untuk mendapatkan trust customer"];
 const faqs = [
@@ -76,7 +72,7 @@ export default function Home() {
 
         <section className="why-section" id="komunitas"><div className="why-shell"><SectionHeading title="Kenapa Starthustler?" center light /><div className="orbit-layout"><div className="orbit-ring orbit-ring--outer" aria-hidden="true" /><div className="orbit-ring orbit-ring--inner" aria-hidden="true" /><div className="benefit-portrait"><img src={ASSETS.benefit} alt="" /></div>{benefits.map(([title, text, Icon], index) => <OrbitDot key={title} icon={Icon} title={title} text={text} position={`orbit-${index + 1}`} />)}</div></div><svg className="navy-wave navy-wave--bottom" viewBox="0 0 1440 86" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,30 C238,84 446,6 702,41 C973,80 1190,24 1440,5 L1440,86 L0,86 Z" /></svg></section>
 
-        <section className="courses-section section-shell" id="kelas"><div className="courses-header"><SectionHeading title="Daftar Kelas Online" /><a href="#kelas" className="text-link">Gabung Sekarang <ArrowRight size={17} /></a></div><div className="course-grid">{courses.map(({ heading, title, instructor, icon: Icon, position }, index) => <article className={`course-card course-card--${index + 1}`} key={title}><div className="course-art" style={{ backgroundImage: `linear-gradient(180deg, rgba(11,19,48,.0), rgba(11,19,48,.54)), url(${ASSETS.courses})`, backgroundPosition: position }}><span className="course-icon"><Icon size={25} /></span><p>{heading}</p><span className="course-orbit" aria-hidden="true" /></div><div className="course-info"><div className="instructor"><span aria-hidden="true"><Users size={11} /></span><small>{instructor}</small></div><h3>{title}</h3><PrimaryButton href="#ebook">Daftar Kelas</PrimaryButton></div></article>)}</div><div className="center-action"><SecondaryButton href="#kelas" className="secondary-dark">Lihat Lainnya <ArrowRight size={16} /></SecondaryButton></div></section>
+        <CourseCatalogue />
 
         <section className="difference-section section-shell"><div className="difference-visual"><div className="difference-photo difference-photo--back"><img src={ASSETS.maleOffice} alt="Japanese office employee" /></div><div className="difference-photo difference-photo--front"><img src={ASSETS.femaleOffice} alt="Japanese office employee" /></div></div><div className="difference-copy"><SectionHeading title="Apa yang Membuat Starthustler Berbeda?" /><div className="stats-row"><div className="stat-ring"><b>30%</b><span>Teori</span></div><div className="stat-ring stat-ring--filled"><b>70%</b><span>Praktek</span></div></div><ul className="check-list">{checklist.map((item) => <li key={item}><Check size={17} /><span>{item}</span></li>)}</ul><PrimaryButton href="#kelas" arrow>Gabung Sekarang</PrimaryButton></div></section>
 
