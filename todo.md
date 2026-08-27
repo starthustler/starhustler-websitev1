@@ -14,3 +14,6 @@
 - [x] Replace Plus Jakarta Sans with Open Sans in the shared typography system.
 - [x] Preserve Poppins for headings and display elements.
 - [x] Verify the revised typography at desktop and mobile sizes.
+- [x] Replace Open Sans with Source Sans 3 in the shared typography system.
+- [x] Retain Poppins for display headings and section titles.
+- [x] Verify Source Sans 3 at desktop and mobile sizes.
