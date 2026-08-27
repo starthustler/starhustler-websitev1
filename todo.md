@@ -17,3 +17,9 @@
 - [x] Replace Open Sans with Source Sans 3 in the shared typography system.
 - [x] Retain Poppins for display headings and section titles.
 - [x] Verify Source Sans 3 at desktop and mobile sizes.
+- [x] Catalogue the supplied logo variants and colour foundations.
+- [x] Write the complete brand guideline for marketing and company-profile use.
+- [x] Review and deliver the final guideline document with brand assets.
+- [x] Audit all current text styles for undersized desktop and mobile usage.
+- [x] Increase supporting text, labels, cards, and FAQ copy to readable minimum sizes.
+- [x] Verify the repaired typography across the full page at desktop and mobile sizes.
