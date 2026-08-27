@@ -6,7 +6,7 @@ import Footer from "../components/Footer.jsx";
 import SectionHeading from "../components/SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "../components/PrimaryButton.jsx";
 
-const ASSETS = { hero: "/manus-storage/starhustler-hero-founder_7e51a4c1.png", about: "/manus-storage/starhustler-about-founders_9d74897f.png", benefit: "/manus-storage/starhustler-benefits-mentor_fdf27b2f.png", courses: "/manus-storage/starhustler-course-creators_4af6efe2.png" };
+const ASSETS = { hero: "/manus-storage/starhustler-hero-founder_7e51a4c1.png", about: "/manus-storage/starhustler-about-founders_9d74897f.png", andre: "/manus-storage/andre-founder_a326359d.svg", septianus: "/manus-storage/septianus-founder_fe165f47.svg", benefit: "/manus-storage/starhustler-benefits-mentor_fdf27b2f.png", courses: "/manus-storage/starhustler-course-creators_4af6efe2.png" };
 const programs = [
   { icon: GraduationCap, title: "Personal Branding" },
   { icon: Users, title: "AI Vibe Coding" },
@@ -67,7 +67,7 @@ export default function Home() {
         <section className="partner-strip" aria-label="Ekosistem AI yang Akan Kamu Kuasai"><div className="partner-shell"><div><h2>Ekosistem AI yang Akan Kamu Kuasai</h2><p>Bayar Sekali, Belajar dengan Tools yang Sama Dipakai Praktisi</p><small>Starthustler membekali kamu dengan tools AI dan infrastruktur yang dipakai solopreneur profesional untuk membangun serta menjalankan bisnisnya sendiri</small></div><div className="partners"><SmallLogo mark="◉" label="ChatGPT" /><SmallLogo mark="✣" label="Claude" /><SmallLogo mark="▰" label="CURSOR" /><SmallLogo mark="◆" label="Lovable" /><SmallLogo mark="✹" label="Higgsfield" /></div></div></section>
 
         <section className="about section-shell" id="tentang">
-          <div className="about-visual"><div className="about-image about-image--primary"><img src={ASSETS.about} alt="" /></div><div className="about-image about-image--cutout"><img src={ASSETS.about} alt="" /></div><span className="about-dot" aria-hidden="true" /></div>
+          <div className="about-visual"><div className="about-image about-image--primary"><img src={ASSETS.andre} alt="Andre Elausta Tuwan" /></div><div className="about-image about-image--cutout"><img src={ASSETS.septianus} alt="Septianus Angga" /></div><span className="about-dot" aria-hidden="true" /></div>
           <div className="about-copy"><SectionHeading title="Tentang Kami" /><p>Starthustler adalah komunitas dan tempat belajar bagi siapa saja yang ingin membangun usaha sendiri dengan bantuan AI. Kami percaya setiap orang bisa menjalankan bisnisnya sendiri tanpa harus punya tim besar, modal besar, atau latar belakang teknis, selama tahu cara memanfaatkan teknologi yang tepat.</p><h3>Starthustler didirikan oleh:</h3><div className="founder-list"><article><CircleCheck size={21} /><div><h3>Andre Elausta Tuwan</h3><p>Financial influencer dan mantan pegawai bank yang memilih resign untuk membangun bisnisnya sendiri. Aktif membagikan edukasi keuangan dan strategi solopreneur kepada ribuan followers</p></div></article><article><CircleCheck size={21} /><div><h3>Septianus Angga</h3><p>Entrepreneur dengan pengalaman lebih dari 10 tahun membangun dan menjalankan berbagai bisnis. Memahami langsung tantangan yang dihadapi solopreneur mulai dari nol hingga berkembang.</p></div></article></div><PrimaryButton href="#program" arrow>Gabung Sekarang</PrimaryButton></div>
         </section>
 

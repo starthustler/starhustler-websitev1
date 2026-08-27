@@ -32,3 +32,6 @@
 - [x] Verify every page at desktop and mobile sizes and repair route issues.
 - [x] Connect the footer LinkedIn icon to the supplied company profile.
 - [x] Verify the LinkedIn link opens safely in a new tab.
+- [x] Upload the supplied Andre and Septianus images as approved website assets.
+- [x] Use Andre for the About-section back portrait and Septianus for the overlapping front portrait.
+- [x] Verify the revised About-section composition at desktop and mobile sizes.
