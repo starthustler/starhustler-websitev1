@@ -13,6 +13,7 @@ export default function Footer() {
           <p>“Human Creates The Vision, AI Handles The Execution”</p>
           <form className="footer-subscribe" onSubmit={(event) => event.preventDefault()}>
             <label className="sr-only" htmlFor="footer-email">Email Address</label>
+            <Mail className="subscribe-icon" size={19} aria-hidden="true" />
             <input id="footer-email" type="email" placeholder="Email Address" />
             <button type="submit" aria-label="Subscribe">Subscribe</button>
           </form>
@@ -31,7 +32,9 @@ export default function Footer() {
         {columns.map((column) => (
           <div className="footer-column" key={column.title}>
             <h3>{column.title}</h3>
-            {column.links.map((link) => <a key={link} href="#beranda">{link}</a>)}
+            <nav className="footer-link-grid" aria-label={column.title}>
+              {column.links.map((link) => <a key={link} href="#beranda">{link}</a>)}
+            </nav>
           </div>
         ))}
       </div>

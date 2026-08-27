@@ -2,3 +2,6 @@
 - [x] Remove custom-written text that is not explicitly supplied.
 - [x] Replace page labels and section content using the supplied wording only.
 - [x] Verify the updated page compiles and renders correctly.
+- [x] Increase the footer subscriber box size and visual weight.
+- [x] Reorganize the footer Quick Link section for clean scanning.
+- [x] Verify the revised footer at desktop and mobile breakpoints.
