@@ -1,8 +1,8 @@
-// StarHustler style contract: the footer continues the confident navy campaign field with compact practical pathways and white type.
+// StarHustler style contract: the footer closes each route with clear paths into the complete learning ecosystem.
 import { Instagram, Linkedin, Mail, MapPin, Youtube } from "lucide-react";
 import { BrandLogo } from "./BrandLogo.jsx";
 
-const columns = [{ title: "Quick Link", links: ["Beranda", "Kelas", "Blog", "Community", "Tentang Kami", "Company Training"] }];
+const columns = [{ title: "Quick Link", links: [["Beranda", "/"], ["Kelas", "/kelas"], ["Blog", "/blog"], ["Community", "/komunitas"], ["Tentang Kami", "/tentang-kami"], ["Company Training", "/company-training"]] }];
 
 export default function Footer() {
   return (
@@ -33,7 +33,7 @@ export default function Footer() {
           <div className="footer-column" key={column.title}>
             <h3>{column.title}</h3>
             <nav className="footer-link-grid" aria-label={column.title}>
-              {column.links.map((link) => <a key={link} href="#beranda">{link}</a>)}
+              {column.links.map(([label, href]) => <a key={label} href={href}>{label}</a>)}
             </nav>
           </div>
         ))}

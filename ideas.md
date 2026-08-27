@@ -54,3 +54,7 @@ A compact white starburst paired with a bold custom-style StarHustler wordmark. 
 - Portraits are treated as a deliberate campaign set: confident Indonesian builders and mentors framed in varied editorial crops rather than interchangeable stock imagery.
 - All navigation, class labels, FAQs, and conversion copy lead in Indonesian; English is reserved for established product and tool names.
 - The starburst and thin blue orbit lines form a purposeful momentum system that marks learning paths, tools, and progress across the page.
+- Every primary interior-page hero uses a human Indonesian builder, mentor, or team scene as its editorial focal point, framed with an offset crop and clear space for messaging.
+- The visual metaphor changes by route: **learning paths** for Kelas, **team operating rhythm** for Company Training, **shared momentum** for Komunitas, and **builder field notes** for Blog.
+- Orbit lines and star marks must connect steps, progress, collaboration, or conversion. They are never decorative without a narrative purpose.
+- Repeated generic hero structures are avoided after the hero. Each route transitions into a distinct asymmetric composition: pathway cards, rhythms, principles, notes, or a practical enquiry panel.

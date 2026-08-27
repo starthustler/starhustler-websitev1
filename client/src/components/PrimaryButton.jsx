@@ -1,7 +1,7 @@
-// StarHustler style contract: action controls are generous rounded blue signals with sharp, energetic feedback.
+// StarHustler style contract: action controls are generous rounded blue signals that work across the complete route system.
 import { ArrowRight, Play } from "lucide-react";
 
-export function PrimaryButton({ children, href = "#kelas", className = "", arrow = false }) {
+export function PrimaryButton({ children, href = "/kelas", className = "", arrow = false }) {
   return (
     <a className={`button button--primary ${className}`} href={href}>
       <span>{children}</span>
@@ -10,7 +10,7 @@ export function PrimaryButton({ children, href = "#kelas", className = "", arrow
   );
 }
 
-export function SecondaryButton({ children, href = "#kelas", className = "", play = false }) {
+export function SecondaryButton({ children, href = "/kelas", className = "", play = false }) {
   return (
     <a className={`button button--secondary ${className}`} href={href}>
       {play && <Play aria-hidden="true" size={15} fill="currentColor" />}
