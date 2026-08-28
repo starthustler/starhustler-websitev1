@@ -5,7 +5,7 @@ import Footer from "../components/Footer.jsx";
 import PageHero from "../components/PageHero.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 
-const heroImage = "/manus-storage/starhustler-community-page-v2_ba443ece.png";
+const heroImage = "/assets/starhustler-community-page-v2_ba443ece.webp";
 const habits = [["Bertukar konteks", "Cerita tentang tantangan dan proses lebih berguna daripada jawaban instan.", MessageCircle], ["Menjaga momentum", "Belajar lebih mudah diteruskan ketika ada ruang untuk kembali dan bertanya.", Sparkles], ["Membuka peluang", "Pertemuan yang baik sering berawal dari percakapan kecil antar builder.", Rocket]];
 
 export default function CommunityPage() {

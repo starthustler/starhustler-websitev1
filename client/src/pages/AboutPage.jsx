@@ -5,7 +5,7 @@ import Footer from "../components/Footer.jsx";
 import PageHero from "../components/PageHero.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 
-const heroImage = "/manus-storage/starhustler-about-page-v2_98c18321.png";
+const heroImage = "/assets/starhustler-about-page-v2_98c18321.webp";
 const principles = [["Manusia tetap memegang arah", "AI adalah alat untuk mempercepat eksekusi, bukan pengganti visi dan pertimbangan manusia.", Compass], ["Belajar harus melahirkan gerak", "Materi terbaik adalah materi yang membuat seseorang mampu mencoba sesuatu setelah sesi berakhir.", Rocket], ["Kemandirian tumbuh lewat dukungan", "Bertumbuh sendiri akan lebih mungkin ketika ada ruang belajar dan percakapan yang saling menguatkan.", HeartHandshake]];
 
 export default function AboutPage() {

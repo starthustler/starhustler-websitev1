@@ -6,7 +6,7 @@ import PageHero from "../components/PageHero.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 import { articles } from "../data/blogArticles.js";
 
-const heroImage = "/manus-storage/starhustler-blog-page-v2_1bec9887.png";
+const heroImage = "/assets/starhustler-blog-page-v2_1bec9887.webp";
 
 export default function BlogPage() {
   return (

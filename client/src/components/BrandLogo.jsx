@@ -1,5 +1,5 @@
 // StarHustler style contract: the supplied one-piece SVG is a stable homeward brand anchor on every route.
-const logoSrc = "/manus-storage/StarthustlerLogoWeb_297db291.svg";
+const logoSrc = "/assets/StarthustlerLogoWeb_297db291.svg";
 
 export function BrandLogo({ light = true }) {
   return (

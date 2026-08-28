@@ -5,7 +5,7 @@ import Footer from "../components/Footer.jsx";
 import PageHero from "../components/PageHero.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 
-const heroImage = "/manus-storage/starhustler-company-training-v2_448b3dfa.png";
+const heroImage = "/assets/starhustler-company-training-v2_448b3dfa.webp";
 const formats = [
   ["Workshop Intensif", "Sesi terarah untuk menyamakan cara pandang dan langsung mencoba alur kerja baru.", Lightbulb],
   ["Sprint Praktik", "Pendampingan singkat yang membantu tim membawa persoalan nyata ke meja belajar.", Workflow],

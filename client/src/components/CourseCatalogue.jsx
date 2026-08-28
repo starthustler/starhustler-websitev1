@@ -3,7 +3,7 @@ import { ArrowRight, Bot, PanelTop, Rocket, Users } from "lucide-react";
 import SectionHeading from "./SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "./PrimaryButton.jsx";
 
-const COURSE_IMAGE = "/manus-storage/starhustler-course-creators_4af6efe2.png";
+const COURSE_IMAGE = "/assets/starhustler-course-creators_4af6efe2.webp";
 const courses = [
   { heading: "Solopreneur Class", title: "Solopreneur Class: Dari Ide Sampai Terjual", instructor: "Andre Tuwan, Abdul Arfan, Septianus", icon: Rocket, position: "0% center" },
   { heading: "Cara Setup Hermes Agent", title: "Cara Setup Hermes Agent", instructor: "Dhiya Fakhar Nafi", icon: Bot, position: "50% center" },
