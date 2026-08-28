@@ -50,15 +50,15 @@ export default function Home() {
           <div className="hero-constellation constellation-one" aria-hidden="true" /><div className="hero-constellation constellation-two" aria-hidden="true" />
           <div className="hero-shell">
             <div className="hero-copy">
-              <p className="hero-kicker"><Sparkles size={15} /> “Komunitas dan Kelas AI untuk Solopreneur Indonesia”</p>
-              <h1>Bangun dan Jalankan Bisnismu dengan <span>Menggunakan AI</span></h1>
-              <p className="hero-italic">“Human Creates The Vision, AI Handles The Execution”</p>
-              <p className="hero-body">Gabung sekarang dan jadi bagian dari komunitas solopreneur dan terus berkembang bersama.</p>
-              <div className="hero-actions"><PrimaryButton href="#kelas" arrow>Gabung Sekarang</PrimaryButton><SecondaryButton href="#program" play>Lihat Program</SecondaryButton></div>
-            </div>
-            <div className="hero-art"><div className="hero-image-frame"><img src={ASSETS.hero} alt="Mentor StarHustler menunjuk ke materi kelas AI" /></div><span className="hero-star star-a">✦</span><span className="hero-star star-b">✦</span><div className="hero-orbit orbit-a" aria-hidden="true" /><div className="hero-orbit orbit-b" aria-hidden="true" /></div>
-          </div>
-          <svg className="hero-wave" viewBox="0 0 1440 86" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,53 C225,100 410,11 658,54 C903,96 1123,16 1440,56 L1440,86 L0,86 Z" /></svg>
+             <p className="hero-kicker"><Sparkles size={15} /> “Komunitas dan Kelas AI untuk Solopreneur Indonesia”</p>
+             <h1>Bangun dan Jalankan Bisnismu dengan <span>Menggunakan AI</span></h1>
+             <p className="hero-italic">“Human Creates The Vision, AI Handles The Execution”</p>
+             <p className="hero-body">Gabung sekarang dan jadi bagian dari komunitas solopreneur dan terus berkembang bersama.</p>
+              <div className="hero-actions"><PrimaryButton href="#kelas" arrow>Gabung Sekarang</PrimaryButton><SecondaryButton href="#program" play>Lihat Kelas</SecondaryButton></div>
+           </div>
+           <div className="hero-art"><div className="hero-image-frame"><img src={ASSETS.hero} alt="Mentor StarHustler menunjuk ke materi kelas AI" /></div><span className="hero-star star-a">✦</span><span className="hero-star star-b">✦</span><div className="hero-orbit orbit-a" aria-hidden="true" /><div className="hero-orbit orbit-b" aria-hidden="true" /></div>
+         </div>
+         <svg className="hero-wave" viewBox="0 0 1440 86" preserveAspectRatio="none" aria-hidden="true"><path fill="#FFFFFF" d="M0,53 C225,100 410,11 658,54 C903,96 1123,16 1440,56 L1440,86 L0,86 Z" /></svg>
         </section>
 
         <section className="partner-strip" aria-label="Ekosistem AI yang Akan Kamu Kuasai"><div className="partner-shell"><div><h2>Ekosistem AI yang Akan Kamu Kuasai</h2><p>Bayar Sekali, Belajar dengan Tools yang Sama Dipakai Praktisi</p><small>Starthustler membekali kamu dengan tools AI dan infrastruktur yang dipakai solopreneur profesional untuk membangun serta menjalankan bisnisnya sendiri</small></div><div className="partners"><SmallLogo src={PARTNER_LOGOS.ChatGPT} label="ChatGPT" /><SmallLogo src={PARTNER_LOGOS.Claude} label="Claude" /><SmallLogo src={PARTNER_LOGOS.Cursor} label="Cursor" /><SmallLogo src={PARTNER_LOGOS.Lovable} label="Lovable" /><SmallLogo src={PARTNER_LOGOS.Higgsfield} label="Higgsfield" /></div></div></section>
