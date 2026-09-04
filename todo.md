@@ -54,3 +54,12 @@
 - [x] Reuse the homepage course catalogue as the Kelas page source.
 - [x] Route the homepage Lihat Lainnya action to the Kelas page.
 - [x] Verify the course-page content and routing at desktop and mobile sizes.
+- [x] Inspect FinalLandingPageDesign.pdf and the current live Kelas route.
+- [x] Extract the new class page layout and exact copy from the supplied PDF.
+- [x] Source section-specific imagery that matches each class topic.
+- [x] Implement the new class detail route and link it from the Kelas catalogue.
+- [x] Verify typography, responsive layout, image relevance, and route behavior.
+- [x] Run tests/build and save a checkpoint.
+- [x] Verify the /kelas first Daftar Kelas CTA redirects to /kelas/solopreneur-class on desktop and mobile.
+- [x] Audit the class page against FinalLandingPageDesign.pdf for exact copy and layout fidelity.
+- [x] Save a new checkpoint after the end-to-end verification.

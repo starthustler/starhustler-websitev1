@@ -6,6 +6,7 @@ import CommunityPage from "./pages/CommunityPage.jsx";
 import AboutPage from "./pages/AboutPage.jsx";
 import BlogPage from "./pages/BlogPage.jsx";
 import BlogArticlePage from "./pages/BlogArticlePage.jsx";
+import SolopreneurClassPage from "./pages/SolopreneurClassPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import { Route, Switch } from "wouter";
 
@@ -14,6 +15,7 @@ export default function App() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/kelas" component={ClassesPage} />
+      <Route path="/kelas/solopreneur-class" component={SolopreneurClassPage} />
       <Route path="/company-training" component={CompanyTrainingPage} />
       <Route path="/komunitas" component={CommunityPage} />
       <Route path="/tentang-kami" component={AboutPage} />

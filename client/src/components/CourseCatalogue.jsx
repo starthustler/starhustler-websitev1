@@ -28,7 +28,7 @@ export default function CourseCatalogue({ standalone = false }) {
             <div className="course-info">
               <div className="instructor"><span aria-hidden="true"><Users size={11} /></span><small>{instructor}</small></div>
               <h3>{title}</h3>
-              <PrimaryButton href="#ebook">Daftar Kelas</PrimaryButton>
+              <PrimaryButton href={index === 0 ? "/kelas/solopreneur-class" : "#ebook"}>Daftar Kelas</PrimaryButton>
             </div>
           </article>
         ))}
