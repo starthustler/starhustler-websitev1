@@ -23,3 +23,9 @@ Production `/manus-storage/...` requests were returning `index.html` with `conte
 
 ## Image repair verification
 All five class-page image assets now return valid WebP image bytes from the CDN. The final desktop and 390px mobile screenshots show the hero-side visual, case-study images, coding image, instructor portraits, and ebook mockup rendered without broken-image placeholders. Build and Vitest both pass.
+
+## Saved checkpoint confirmation
+Checkpoint `dbd41df9` was rechecked at both desktop and 390px mobile sizes. The repaired CDN-backed images remained visible throughout the class page with no broken-image placeholders in the saved preview.
+
+## Perbaikan hero lanjutan
+Ditemukan mismatch nama key: komponen JSX memakai `ASSETS.hero`, sedangkan object asset mendefinisikannya sebagai `idea`. Key tersebut diselaraskan ke `hero`. Setelah perubahan, hero tampil pada screenshot preview desktop dan 390px mobile; gambar case study, coding, instructor, dan ebook tetap tampil.

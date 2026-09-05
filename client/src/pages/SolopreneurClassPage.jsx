@@ -4,7 +4,7 @@ import Footer from "../components/Footer.jsx";
 import { PrimaryButton, SecondaryButton } from "../components/PrimaryButton.jsx";
 
 const ASSETS = {
- idea: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/qMVpcqeyowcgpnzh.webp",
+ hero: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/qMVpcqeyowcgpnzh.webp",
   finance: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/QXaiRNsKUVeNqeLt.webp",
   coding: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/MpuZefECsUMNWyEl.webp",
   instructor: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/cWajMpqmaSJAlBlN.webp",

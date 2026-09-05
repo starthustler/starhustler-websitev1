@@ -67,5 +67,11 @@
 - [x] Replace invalid image sources with valid project-hosted assets.
 - [x] Verify every class-page image at desktop and mobile sizes.
 - [x] Run tests/build and save an image-load repair checkpoint.
-- [ ] Save a new checkpoint for the image-load repair after the successful build, test, and visual verification.
-- [ ] Reconfirm the repaired class-page images on the saved checkpoint preview URL.
+- [x] Save a new checkpoint for the image-load repair after the successful build, test, and visual verification.
+- [x] Reconfirm the repaired class-page images on the saved checkpoint preview URL.
+- [x] Audit URL gambar hero Solopreneur Class di produksi dan kode saat ini.
+- [x] Ganti asset hero dengan URL gambar yang benar-benar dapat diakses.
+- [x] Verifikasi hero dan seluruh gambar halaman pada desktop serta mobile.
+- [x] Jalankan build/test dan simpan checkpoint perbaikan hero.
+- [ ] Simpan checkpoint baru setelah perbaikan key `ASSETS.hero` dan build/test berhasil.
+- [ ] Verifikasi ulang hero pada preview checkpoint baru di desktop dan mobile.
