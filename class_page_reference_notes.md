@@ -17,3 +17,9 @@ The preview `/kelas` first `Daftar Kelas` CTA successfully navigated to `/kelas/
 
 ## Final fidelity check
 The final preview now includes the PDF-derived long-form sequence: hero and date block, introductory audience copy, simple-app case study, revenue simulation, AI-building explanation, mentor proof, benefits, proof-chart grid, bundle promotion, ebook contents, instructor profile, StartHustler introduction, and footer. The supplied copy was retained from the extracted PDF, including its original wording and capitalization. Final desktop and mobile screenshots show the section hierarchy, image relationships, Poppins heading treatment, Source Sans 3 body treatment, and responsive stacking are functioning.
+
+## Image-load audit
+Production `/manus-storage/...` requests were returning `index.html` with `content-type: text/html`, not image bytes. This caused the visible broken-image icons on the live class page. The five class-detail images were re-encoded to smaller WebP files and uploaded to the public CDN; the page now references those CDN URLs directly.
+
+## Image repair verification
+All five class-page image assets now return valid WebP image bytes from the CDN. The final desktop and 390px mobile screenshots show the hero-side visual, case-study images, coding image, instructor portraits, and ebook mockup rendered without broken-image placeholders. Build and Vitest both pass.

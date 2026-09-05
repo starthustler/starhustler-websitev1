@@ -4,11 +4,11 @@ import Footer from "../components/Footer.jsx";
 import { PrimaryButton, SecondaryButton } from "../components/PrimaryButton.jsx";
 
 const ASSETS = {
-  hero: "/manus-storage/solopreneur-idea-validation_dc30639e.png",
-  finance: "/manus-storage/solopreneur-finance-app-story_39f41a8f.png",
-  coding: "/manus-storage/solopreneur-ai-coding_c00013cf.png",
-  instructor: "/manus-storage/abdul-arfan-instructor_63348e7b.png",
-  ebook: "/manus-storage/starhustler-solopreneur-starter-kit-mockup_f0ada996.png",
+ idea: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/qMVpcqeyowcgpnzh.webp",
+  finance: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/QXaiRNsKUVeNqeLt.webp",
+  coding: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/MpuZefECsUMNWyEl.webp",
+  instructor: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/cWajMpqmaSJAlBlN.webp",
+  ebook: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/UYQFNKEWgFEGvhtB.webp",
 };
 
 const benefits = [

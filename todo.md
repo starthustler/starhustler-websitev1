@@ -63,3 +63,9 @@
 - [x] Verify the /kelas first Daftar Kelas CTA redirects to /kelas/solopreneur-class on desktop and mobile.
 - [x] Audit the class page against FinalLandingPageDesign.pdf for exact copy and layout fidelity.
 - [x] Save a new checkpoint after the end-to-end verification.
+- [x] Audit all class-page image references and browser network failures.
+- [x] Replace invalid image sources with valid project-hosted assets.
+- [x] Verify every class-page image at desktop and mobile sizes.
+- [x] Run tests/build and save an image-load repair checkpoint.
+- [ ] Save a new checkpoint for the image-load repair after the successful build, test, and visual verification.
+- [ ] Reconfirm the repaired class-page images on the saved checkpoint preview URL.
