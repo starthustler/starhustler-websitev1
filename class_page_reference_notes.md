@@ -29,3 +29,9 @@ Checkpoint `dbd41df9` was rechecked at both desktop and 390px mobile sizes. The 
 
 ## Perbaikan hero lanjutan
 Ditemukan mismatch nama key: komponen JSX memakai `ASSETS.hero`, sedangkan object asset mendefinisikannya sebagai `idea`. Key tersebut diselaraskan ke `hero`. Setelah perubahan, hero tampil pada screenshot preview desktop dan 390px mobile; gambar case study, coding, instructor, dan ebook tetap tampil.
+
+## Konfirmasi checkpoint hero
+Checkpoint `0fe74370` diverifikasi ulang pada desktop dan mobile. Hero image tampil di sisi kanan desktop dan tersusun dengan benar di bawah metadata pada mobile; seluruh gambar halaman lainnya juga tetap tampil.
+
+## User-supplied poster replacement
+The first Solopreneur Class hero now uses the user-supplied `1.png`, uploaded to the public CDN at `https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/SUvIrxbaguqTiHKv.png`. The CDN returns `image/png` bytes at 1400×1050. Build and Vitest pass; desktop and 390px mobile previews show the supplied webinar poster in the hero frame.

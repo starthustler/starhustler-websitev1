@@ -73,5 +73,11 @@
 - [x] Ganti asset hero dengan URL gambar yang benar-benar dapat diakses.
 - [x] Verifikasi hero dan seluruh gambar halaman pada desktop serta mobile.
 - [x] Jalankan build/test dan simpan checkpoint perbaikan hero.
-- [ ] Simpan checkpoint baru setelah perbaikan key `ASSETS.hero` dan build/test berhasil.
-- [ ] Verifikasi ulang hero pada preview checkpoint baru di desktop dan mobile.
+- [x] Simpan checkpoint baru setelah perbaikan key `ASSETS.hero` dan build/test berhasil.
+- [x] Verifikasi ulang hero pada preview checkpoint baru di desktop dan mobile.
+- [x] Upload the user-supplied `1.png` poster as a stable web asset.
+- [x] Replace the Solopreneur Class hero image reference with the supplied poster.
+- [x] Verify the new poster at desktop and mobile sizes.
+- [x] Run build/test and save the updated poster checkpoint.
+- [ ] Save a new checkpoint after replacing the Solopreneur Class hero with the uploaded `1.png` poster.
+- [ ] Reconfirm the updated hero poster on the saved checkpoint preview URL at desktop and mobile sizes.
