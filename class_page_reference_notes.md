@@ -35,3 +35,12 @@ Checkpoint `0fe74370` diverifikasi ulang pada desktop dan mobile. Hero image tam
 
 ## User-supplied poster replacement
 The first Solopreneur Class hero now uses the user-supplied `1.png`, uploaded to the public CDN at `https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/SUvIrxbaguqTiHKv.png`. The CDN returns `image/png` bytes at 1400×1050. Build and Vitest pass; desktop and 390px mobile previews show the supplied webinar poster in the hero frame.
+
+## Konfirmasi checkpoint poster terbaru
+Checkpoint `3d5b67ff` diverifikasi ulang pada desktop dan 390px mobile. Poster webinar yang diunggah pengguna tampil di hero pertama dan tetap terbaca dalam frame responsif.
+
+## Penyesuaian frame poster
+Hero frame diubah dari rasio bebas dengan `object-fit: cover` menjadi frame 4:3 dengan `object-fit: contain`, sehingga poster 1,400×1,050 tampil utuh tanpa crop. Desktop dan 390px mobile sudah diverifikasi; seluruh teks poster tetap terlihat, dengan latar navy sebagai letterbox yang menyatu dengan hero.
+
+## Poster EventBy 1.400×1.228 px
+Hero poster diganti dengan EventBy.png dari CDN publik `https://files.manuscdn.com/user_upload_by_module/session_file/310519663103122812/IKQUfUYiJKJGWNsy.png`. Frame hero tetap menggunakan rasio 4:3 dan `object-fit: contain`; build/test berhasil dan poster baru diverifikasi tampil utuh pada desktop serta viewport mobile 390px.

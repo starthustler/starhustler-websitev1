@@ -79,5 +79,21 @@
 - [x] Replace the Solopreneur Class hero image reference with the supplied poster.
 - [x] Verify the new poster at desktop and mobile sizes.
 - [x] Run build/test and save the updated poster checkpoint.
-- [ ] Save a new checkpoint after replacing the Solopreneur Class hero with the uploaded `1.png` poster.
-- [ ] Reconfirm the updated hero poster on the saved checkpoint preview URL at desktop and mobile sizes.
+- [x] Save a new checkpoint after replacing the Solopreneur Class hero with the uploaded `1.png` poster.
+- [x] Reconfirm the updated hero poster on the saved checkpoint preview URL at desktop and mobile sizes.
+- [x] Audit framing poster hero pertama pada halaman Solopreneur Class.
+- [x] Tentukan rasio aspek dan area aman desain yang sesuai dengan frame hero.
+- [x] Terapkan atau rekomendasikan perbaikan fit poster hero.
+- [x] Verifikasi komposisi poster pada desktop dan mobile.
+- [x] Define a non-cropping hero poster frame for the existing 1,400 × 1,050 image.
+- [x] Implement contained poster-frame styling on the Solopreneur Class hero.
+- [x] Verify the full poster at desktop and mobile sizes.
+- [x] Run build/test and save the frame-fit checkpoint.
+- [x] Upload poster EventBy.png berukuran 1.400 × 1.228 px sebagai asset web stabil.
+- [x] Ganti referensi poster hero Solopreneur Class dengan EventBy.png.
+- [x] Verifikasi poster baru dengan frame non-cropping pada desktop dan mobile.
+- [x] Jalankan build/test dan simpan checkpoint poster EventBy.
+- [ ] Simpan checkpoint baru setelah mengganti poster hero dengan EventBy.png.
+- [ ] Verifikasi ulang poster EventBy pada preview checkpoint tersimpan di desktop dan mobile.
+- [ ] Simpan checkpoint baru setelah implementasi frame non-cropping dan update poster EventBy.
+- [ ] Verifikasi pada preview checkpoint tersimpan bahwa poster EventBy tetap tampil utuh di desktop dan mobile.
