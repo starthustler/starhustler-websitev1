@@ -187,6 +187,9 @@ button { border:0; }
   position: relative;
   z-index: 60;
 }
+.class-detail-page {
+  overflow-x: clip;
+}
 .class-announcement--navy {
   background: var(--navy);
 }
@@ -877,7 +880,11 @@ button { border:0; }
 @media (max-width: 760px) {
   .class-announcement {
     font-size: 12px;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 5px 12px;
+    justify-content: center;
+    padding: 10px 14px;
+    text-align: center;
   }
   .class-video-section {
     padding-top: 55px;
@@ -892,6 +899,10 @@ button { border:0; }
   }
   .class-managed-list__grid {
     grid-template-columns: 1fr;
+  }
+  .class-managed-list__grid article {
+    min-height: 0;
+    padding: 19px;
   }
   .class-faq {
     padding-bottom: 84px;
@@ -908,6 +919,7 @@ button { border:0; }
     border-radius: 14px;
     gap: 8px;
     padding: 9px 9px 9px 12px;
+    width: 100%;
   }
   .class-floating-cta__copy > strong {
     font-size: 14px;
@@ -922,7 +934,7 @@ button { border:0; }
   }
   .class-floating-cta .button {
     font-size: 13px;
-    min-height: 42px;
+    min-height: 44px;
     padding: 0 14px;
   }
   .class-floating-notification {
@@ -934,6 +946,7 @@ button { border:0; }
   }
   .class-admin-quick-edit {
     bottom: 111px;
+    min-height: 44px;
   }
   .admin-header {
     align-items: flex-start;
@@ -943,6 +956,13 @@ button { border:0; }
   .admin-header nav {
     flex-wrap: wrap;
     gap: 13px;
+    width: 100%;
+  }
+  .admin-header nav a,
+  .admin-header nav button {
+    align-items: center;
+    display: inline-flex;
+    min-height: 44px;
   }
   .admin-main {
     padding: 32px 14px 80px;
@@ -956,18 +976,37 @@ button { border:0; }
   }
   .admin-editor-bar {
     align-items: flex-start;
+    flex-direction: column;
     gap: 15px;
   }
   .admin-editor-bar > div {
-    align-items: flex-end;
-    flex-direction: column;
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 8px;
+    width: 100%;
   }
   .admin-form-grid {
     grid-template-columns: 1fr;
   }
   .admin-panel {
     padding: 20px 15px;
+  }
+  .admin-field input,
+  .admin-field textarea,
+  .admin-field select {
+    font-size: 16px;
+    min-height: 48px;
+  }
+  .admin-upload {
+    min-height: 44px;
+  }
+  .admin-image-preview {
+    flex-wrap: wrap;
+  }
+  .admin-image-preview img {
+    height: auto;
+    max-height: 180px;
+    max-width: 100%;
   }
   .admin-field--wide,
   .admin-image-field {
@@ -987,8 +1026,111 @@ button { border:0; }
   .admin-repeater > article > .admin-toggle {
     padding-right: 0;
   }
-  .admin-save-footer .button {
+  .admin-repeater__tools button,
+  .admin-section-order button {
+    height: 40px;
+    width: 40px;
+  }
+  .admin-table-wrap {
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+  .admin-table,
+  .admin-table tbody,
+  .admin-table tr,
+  .admin-table td {
+    display: block;
+    min-width: 0;
     width: 100%;
+  }
+  .admin-table thead {
+    display: none;
+  }
+  .admin-table tr {
+    background: #fff;
+    border: 1px solid #e1e6f0;
+    margin-bottom: 14px;
+    padding: 12px 15px;
+  }
+  .admin-table td {
+    border: 0;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 105px minmax(0, 1fr);
+    overflow-wrap: anywhere;
+    padding: 8px 0;
+  }
+  .admin-table td::before {
+    color: #6c7588;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .admin-table td:nth-child(1)::before {
+    content: "Class";
+  }
+  .admin-table td:nth-child(2)::before {
+    content: "Slug";
+  }
+  .admin-table td:nth-child(3)::before {
+    content: "Status";
+  }
+  .admin-table td:nth-child(4)::before {
+    content: "Updated";
+  }
+  .admin-table td:nth-child(5)::before {
+    content: "Actions";
+  }
+  .admin-table td[colspan] {
+    display: block;
+  }
+  .admin-table td[colspan]::before {
+    content: none;
+  }
+  .admin-actions {
+    flex-wrap: wrap;
+  }
+  .admin-actions a,
+  .admin-actions button {
+    height: 44px;
+    width: 44px;
+  }
+  .admin-save-footer .button {
+    min-height: 48px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 460px) {
+  .class-detail-hero__copy h1 {
+    font-size: 36px;
+    letter-spacing: -1.6px;
+  }
+  .class-hero-description {
+    font-size: 16px !important;
+  }
+  .class-detail-meta > span:first-child {
+    max-width: 56px;
+  }
+  .class-video__facade span {
+    height: 58px;
+    width: 58px;
+  }
+  .class-floating-cta__copy > strong {
+    max-width: 138px;
+  }
+  .class-floating-notification {
+    right: 10px;
+  }
+  .admin-title-row .button,
+  .admin-editor-bar .button {
+    justify-content: center;
+    width: 100%;
+  }
+  .admin-table td {
+    grid-template-columns: 82px minmax(0, 1fr);
   }
 }
 

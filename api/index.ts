@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-type ServerApp = ReturnType<(typeof import("../server/app"))["createApp"]>;
+type ServerApp = ReturnType<(typeof import("../server/app.js"))["createApp"]>;
 
 let appPromise: Promise<ServerApp> | null = null;
 
@@ -9,7 +9,9 @@ function getApp() {
     // Keep server initialization inside the request lifecycle. Besides reducing
     // cold-start work for health checks, this turns bootstrap failures into a
     // controlled JSON response instead of Vercel's opaque invocation error.
-    appPromise = import("../server/app").then(({ createApp }) => createApp());
+    appPromise = import("../server/app.js").then(({ createApp }) =>
+      createApp()
+    );
   }
   return appPromise;
 }

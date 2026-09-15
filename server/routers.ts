@@ -1,13 +1,13 @@
-import { COOKIE_NAME } from "../shared/const";
+import { COOKIE_NAME } from "../shared/const.js";
 import {
   DEFAULT_CLASS_CONTENT,
   normalizeClassContent,
-} from "../shared/classContent";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
-import { storagePut } from "./storage";
-import * as db from "./db";
+} from "../shared/classContent.js";
+import { getSessionCookieOptions } from "./_core/cookies.js";
+import { systemRouter } from "./_core/systemRouter.js";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc.js";
+import { storagePut } from "./storage.js";
+import * as db from "./db.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 

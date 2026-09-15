@@ -1,14 +1,14 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { classes, InsertClass, InsertUser, users } from "../drizzle/schema";
+import { classes, InsertClass, InsertUser, users } from "../drizzle/schema.js";
 import {
   DEFAULT_CLASS_RECORD,
   normalizeClassContent,
   type ClassContent,
   type ClassRecord,
   type PublishStatus,
-} from "../shared/classContent";
-import { ENV } from "./_core/env";
+} from "../shared/classContent.js";
+import { ENV } from "./_core/env.js";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
