@@ -1,5 +1,19 @@
 {
+  "functions": {
+    "api/index.ts": { "maxDuration": 30 }
+  },
+  "redirects": [
+    {
+      "source": "/kelas/solopreneur-class",
+      "destination": "/kelas/kelas-solopreneur",
+      "permanent": true
+    }
+  ],
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index?__cms_path=api/:path*"
+    },
+    { "source": "/:path*", "destination": "/index.html" }
   ]
 }
