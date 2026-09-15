@@ -1,8 +1,8 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../shared/const";
 import {
   DEFAULT_CLASS_CONTENT,
   normalizeClassContent,
-} from "@shared/classContent";
+} from "../shared/classContent";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc";
