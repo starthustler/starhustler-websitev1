@@ -1,6 +1,14 @@
-import { desc, eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { classes, InsertClass, InsertUser, users } from "../drizzle/schema.js";
+import { and, desc, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import {
+  adminSessions,
+  classes,
+  type InsertClass,
+  type InsertUser,
+  type User,
+  users,
+} from "../drizzle/schema.js";
 import {
   DEFAULT_CLASS_RECORD,
   normalizeClassContent,
@@ -10,136 +18,250 @@ import {
 } from "../shared/classContent.js";
 import { ENV } from "./_core/env.js";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let dbClient: ReturnType<typeof postgres> | null = null;
+let database: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!database && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      dbClient = postgres(process.env.DATABASE_URL, {
+        max: 1,
+        prepare: false,
+        connect_timeout: 10,
+        idle_timeout: 20,
+      });
+      database = drizzle(dbClient);
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
-      _db = null;
+      console.warn("[Database] Failed to initialize:", error);
+      dbClient = null;
+      database = null;
     }
   }
-  return _db;
+  return database;
 }
 
-export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
-
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = "admin";
-      updateSet.role = "admin";
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
-  }
-}
-
-export async function getUserByOpenId(openId: string) {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
-  const result = await db
-    .select()
-    .from(users)
-    .where(eq(users.openId, openId))
-    .limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
-}
-
-let classCmsInitialization: Promise<void> | null = null;
+let appSchemaInitialization: Promise<void> | null = null;
 
 export async function ensureClassCmsSchema(): Promise<void> {
-  if (classCmsInitialization) return classCmsInitialization;
-  classCmsInitialization = (async () => {
+  if (appSchemaInitialization) return appSchemaInitialization;
+  appSchemaInitialization = (async () => {
     const db = await getDb();
     if (!db) throw new Error("DATABASE_URL is not configured");
 
     await db.execute(
       sql.raw(`
-      CREATE TABLE IF NOT EXISTS \`classes\` (
-        \`id\` int NOT NULL AUTO_INCREMENT,
-        \`name\` varchar(180) NOT NULL,
-        \`slug\` varchar(180) NOT NULL,
-        \`status\` enum('draft','published') NOT NULL DEFAULT 'draft',
-        \`featured\` int NOT NULL DEFAULT 0,
-        \`contentJson\` longtext NOT NULL,
-        \`createdAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY (\`id\`),
-        UNIQUE KEY \`classes_slug_unique\` (\`slug\`)
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" serial PRIMARY KEY,
+        "openId" varchar(320) NOT NULL UNIQUE,
+        "name" text,
+        "email" varchar(320),
+        "loginMethod" varchar(64),
+        "role" varchar(16) NOT NULL DEFAULT 'user',
+        "passwordHash" text,
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
+        "lastSignedIn" timestamptz NOT NULL DEFAULT now()
+      )
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE UNIQUE INDEX IF NOT EXISTS "one_admin_idx"
+      ON "users" (("role")) WHERE "role" = 'admin'
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE TABLE IF NOT EXISTS "admin_sessions" (
+        "tokenHash" varchar(64) PRIMARY KEY,
+        "userId" integer NOT NULL,
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "expiresAt" timestamptz NOT NULL
+      )
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE INDEX IF NOT EXISTS "admin_sessions_user_idx"
+      ON "admin_sessions" ("userId")
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE INDEX IF NOT EXISTS "admin_sessions_expiry_idx"
+      ON "admin_sessions" ("expiresAt")
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE TABLE IF NOT EXISTS "classes" (
+        "id" serial PRIMARY KEY,
+        "name" varchar(180) NOT NULL,
+        "slug" varchar(180) NOT NULL UNIQUE,
+        "status" varchar(16) NOT NULL DEFAULT 'draft',
+        "featured" integer NOT NULL DEFAULT 0,
+        "contentJson" text NOT NULL,
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now()
       )
     `)
     );
 
     await db
       .insert(classes)
-      .ignore()
       .values({
         name: DEFAULT_CLASS_RECORD.name,
         slug: DEFAULT_CLASS_RECORD.slug,
         status: DEFAULT_CLASS_RECORD.status,
         featured: 1,
         contentJson: JSON.stringify(DEFAULT_CLASS_RECORD.content),
-      });
+      })
+      .onConflictDoNothing({ target: classes.slug });
   })().catch(error => {
-    classCmsInitialization = null;
+    appSchemaInitialization = null;
     throw error;
   });
-  return classCmsInitialization;
+  return appSchemaInitialization;
+}
+
+export async function upsertUser(user: InsertUser): Promise<void> {
+  if (!user.openId) throw new Error("User openId is required for upsert");
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+
+  const now = new Date();
+  const values: InsertUser = {
+    openId: user.openId,
+    name: user.name ?? null,
+    email: user.email ?? null,
+    loginMethod: user.loginMethod ?? null,
+    role: user.role ?? (user.openId === ENV.ownerOpenId ? "admin" : "user"),
+    passwordHash: user.passwordHash ?? null,
+    lastSignedIn: user.lastSignedIn ?? now,
+    updatedAt: now,
+  };
+  await db
+    .insert(users)
+    .values(values)
+    .onConflictDoUpdate({
+      target: users.openId,
+      set: {
+        name: values.name,
+        email: values.email,
+        loginMethod: values.loginMethod,
+        role: values.role,
+        passwordHash: values.passwordHash,
+        lastSignedIn: values.lastSignedIn,
+        updatedAt: now,
+      },
+    });
+}
+
+export async function getUserByOpenId(openId: string) {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(users)
+    .where(eq(users.openId, openId))
+    .limit(1);
+  return rows[0];
+}
+
+export async function hasAdminUser(): Promise<boolean> {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(and(eq(users.role, "admin"), isNotNull(users.passwordHash)))
+    .limit(1);
+  return Boolean(rows[0]);
+}
+
+export async function createInitialAdmin(input: {
+  name: string;
+  email: string;
+  passwordHash: string;
+}): Promise<User> {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  if (await hasAdminUser()) throw new Error("Admin sudah dikonfigurasi");
+
+  const now = new Date();
+  const rows = await db
+    .insert(users)
+    .values({
+      openId: input.email.toLowerCase(),
+      name: input.name,
+      email: input.email.toLowerCase(),
+      loginMethod: "password",
+      role: "admin",
+      passwordHash: input.passwordHash,
+      lastSignedIn: now,
+      updatedAt: now,
+    })
+    .returning();
+  if (!rows[0]) throw new Error("Admin tidak dapat dibuat");
+  return rows[0];
+}
+
+export async function getAdminByEmail(
+  email: string
+): Promise<User | undefined> {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select()
+    .from(users)
+    .where(and(eq(users.email, email.toLowerCase()), eq(users.role, "admin")))
+    .limit(1);
+  return rows[0];
+}
+
+export async function createAdminSession(input: {
+  tokenHash: string;
+  userId: number;
+  expiresAt: Date;
+}) {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) throw new Error("Database is not available");
+  await db.delete(adminSessions).where(lt(adminSessions.expiresAt, new Date()));
+  await db.insert(adminSessions).values(input);
+}
+
+export async function getUserBySessionHash(tokenHash: string) {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (!db) return undefined;
+  const rows = await db
+    .select({ user: users })
+    .from(adminSessions)
+    .innerJoin(users, eq(adminSessions.userId, users.id))
+    .where(
+      and(
+        eq(adminSessions.tokenHash, tokenHash),
+        gt(adminSessions.expiresAt, new Date()),
+        eq(users.role, "admin")
+      )
+    )
+    .limit(1);
+  return rows[0]?.user;
+}
+
+export async function deleteAdminSession(tokenHash: string) {
+  await ensureClassCmsSchema();
+  const db = await getDb();
+  if (db)
+    await db
+      .delete(adminSessions)
+      .where(eq(adminSessions.tokenHash, tokenHash));
 }
 
 function parseContent(value: string): ClassContent {
@@ -151,11 +273,13 @@ function parseContent(value: string): ClassContent {
 }
 
 function toClassRecord(row: typeof classes.$inferSelect): ClassRecord {
+  const status: PublishStatus =
+    row.status === "published" ? "published" : "draft";
   return {
     id: row.id,
     name: row.name,
     slug: row.slug,
-    status: row.status,
+    status,
     featured: Boolean(row.featured),
     content: parseContent(row.contentJson),
     createdAt: row.createdAt.toISOString(),
@@ -180,17 +304,9 @@ export async function listPublishedClasses(): Promise<ClassRecord[]> {
   return rows.map(toClassRecord);
 }
 
-export async function getPublishedClassBySlug(
-  slug: string
-): Promise<ClassRecord | undefined> {
-  const db = await requireClassDb();
-  const rows = await db
-    .select()
-    .from(classes)
-    .where(eq(classes.slug, slug))
-    .limit(1);
-  const row = rows[0];
-  return row?.status === "published" ? toClassRecord(row) : undefined;
+export async function getPublishedClassBySlug(slug: string) {
+  const row = await getClassBySlug(slug);
+  return row?.status === "published" ? row : undefined;
 }
 
 export async function getClassBySlug(
@@ -238,9 +354,11 @@ export async function createClass(input: {
     featured: input.featured ? 1 : 0,
     contentJson: JSON.stringify(normalizeClassContent(input.content)),
   };
-  const result = await db.insert(classes).values(values);
-  const id = Number(result[0].insertId);
-  const created = await getClassById(id);
+  const rows = await db
+    .insert(classes)
+    .values(values)
+    .returning({ id: classes.id });
+  const created = rows[0] ? await getClassById(rows[0].id) : undefined;
   if (!created) throw new Error("Class was created but could not be loaded");
   return created;
 }
@@ -264,6 +382,7 @@ export async function updateClass(
       status: input.status,
       featured: input.featured ? 1 : 0,
       contentJson: JSON.stringify(normalizeClassContent(input.content)),
+      updatedAt: new Date(),
     })
     .where(eq(classes.id, id));
   const updated = await getClassById(id);

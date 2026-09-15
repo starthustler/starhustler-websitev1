@@ -4,6 +4,7 @@ import { registerOAuthRoutes } from "./_core/oauth.js";
 import { registerStorageProxy } from "./_core/storageProxy.js";
 import { appRouter } from "./routers.js";
 import { createContext } from "./_core/context.js";
+import * as db from "./db.js";
 
 export function createApp() {
   const app = express();
@@ -20,20 +21,27 @@ export function createApp() {
   app.use(express.json({ limit: "8mb" }));
   app.use(express.urlencoded({ limit: "8mb", extended: true }));
   registerStorageProxy(app);
-  registerOAuthRoutes(app);
+  if (process.env.OAUTH_SERVER_URL && process.env.JWT_SECRET) {
+    registerOAuthRoutes(app);
+  }
   app.use(
     "/api/trpc",
     createExpressMiddleware({ router: appRouter, createContext })
   );
-  app.get("/api/health", (_req, res) => {
+  app.get("/api/health", async (_req, res) => {
+    let adminConfigured = false;
+    if (process.env.DATABASE_URL) {
+      try {
+        adminConfigured = await db.hasAdminUser();
+      } catch {
+        adminConfigured = false;
+      }
+    }
     res.json({
       ok: true,
       databaseConfigured: Boolean(process.env.DATABASE_URL),
-      authConfigured: Boolean(
-        process.env.JWT_SECRET &&
-          process.env.OAUTH_SERVER_URL &&
-          process.env.OWNER_OPEN_ID
-      ),
+      adminConfigured,
+      authConfigured: adminConfigured,
     });
   });
   return app;
