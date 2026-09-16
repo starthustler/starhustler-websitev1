@@ -1,30 +1,18 @@
 // StarHustler style contract: this shared catalogue preserves the homepage's practical, editorial course-card rhythm everywhere it appears.
-import { ArrowRight, Bot, PanelTop, Rocket, Users } from "lucide-react";
+import { ArrowRight, Rocket, Users } from "lucide-react";
+import { DEFAULT_CLASS_RECORDS } from "@shared/classContent";
 import SectionHeading from "./SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "./PrimaryButton.jsx";
 import { trpc } from "../lib/trpc";
 
 const COURSE_IMAGE = "/assets/starhustler-course-creators_4af6efe2.webp";
-const legacyCourses = [
-  {
-    heading: "Cara Setup Hermes Agent",
-    title: "Cara Setup Hermes Agent",
-    instructor: "Dhiya Fakhar Nafi",
-    icon: Bot,
-    position: "50% center",
-  },
-  {
-    heading: "Membuat Konten Media Sosial dengan AI",
-    title: "Membuat Konten Media Sosial dengan AI",
-    instructor: "Filbert",
-    icon: PanelTop,
-    position: "100% center",
-  },
-];
-
 export default function CourseCatalogue({ standalone = false }) {
-  const query = trpc.classes.list.useQuery(undefined, { retry: 1 });
-  const managed = (query.data || []).map((item, index) => ({
+  const query = trpc.classes.list.useQuery(undefined, {
+    retry: 1,
+    placeholderData: DEFAULT_CLASS_RECORDS,
+  });
+  const records = query.data?.length ? query.data : DEFAULT_CLASS_RECORDS;
+  const courses = records.map((item, index) => ({
     heading: item.content.hero.eyebrow || item.name,
     title: item.name,
     instructor: item.content.mentor.name || "StartHustler",
@@ -33,14 +21,6 @@ export default function CourseCatalogue({ standalone = false }) {
     image: index === 0 ? COURSE_IMAGE : item.content.hero.imageUrl,
     href: `/kelas/${item.slug}`,
   }));
-  const courses = [
-    ...managed,
-    ...legacyCourses.map(item => ({
-      ...item,
-      image: COURSE_IMAGE,
-      href: "#ebook",
-    })),
-  ];
   return (
     <section
       className={`courses-section section-shell${standalone ? " courses-section--standalone" : ""}`}

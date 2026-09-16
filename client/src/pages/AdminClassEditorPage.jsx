@@ -391,6 +391,7 @@ export default function AdminClassEditorPage({ id }) {
             )}
           </div>
         </div>
+        <div className="admin-editor-top-grid">
         <Panel title="Basic">
           <Field
             label="Class Name"
@@ -432,6 +433,29 @@ export default function AdminClassEditorPage({ id }) {
             onChange={v => set("content.shortDescription", v)}
           />
         </Panel>
+
+        <Panel title="Section Visibility & Order">
+          <div className="admin-visibility admin-field--wide">
+            {visibleKeys.map(key => (
+              <Toggle
+                key={key}
+                label={key}
+                checked={content.sectionVisibility[key]}
+                onChange={v => set(`content.sectionVisibility.${key}`, v)}
+              />
+            ))}
+          </div>
+          <div className="admin-section-order admin-field--wide">
+            {content.sectionOrder.map((key, index) => (
+              <div key={key}>
+                <span>{index + 1}. {key}</span>
+                <button type="button" onClick={() => moveSection(index, -1)} disabled={index === 0}><ArrowUp size={14} /></button>
+                <button type="button" onClick={() => moveSection(index, 1)} disabled={index === content.sectionOrder.length - 1}><ArrowDown size={14} /></button>
+              </div>
+            ))}
+          </div>
+        </Panel>
+        </div>
 
         <Panel title="Hero" description="Headline, media, dan CTA utama.">
           <Field
@@ -523,8 +547,13 @@ export default function AdminClassEditorPage({ id }) {
 
         <Panel
           title="Pricing & Payment"
-          description="Semua CTA memakai Payment URL ini, kecuali custom URL diaktifkan pada komponen tertentu."
+          description="Gunakan central payment dari Settings atau URL khusus untuk kelas ini."
         >
+          <Toggle
+            label="Use global payment URL"
+            checked={content.pricing.useGlobalPaymentUrl}
+            onChange={v => set("content.pricing.useGlobalPaymentUrl", v)}
+          />
           <Field
             label="Selling Price"
             type="number"
@@ -559,11 +588,11 @@ export default function AdminClassEditorPage({ id }) {
             value={content.pricing.supportingText}
             onChange={v => set("content.pricing.supportingText", v)}
           />
-          <Field
-            label="Central Payment URL"
+          {!content.pricing.useGlobalPaymentUrl && <Field
+            label="Custom Payment URL"
             value={content.pricing.paymentUrl}
             onChange={v => set("content.pricing.paymentUrl", v)}
-          />
+          />}
         </Panel>
 
         <Panel title="Core Content">
@@ -831,42 +860,6 @@ export default function AdminClassEditorPage({ id }) {
             value={content.countdown.expiredText}
             onChange={v => set("content.countdown.expiredText", v)}
           />
-        </Panel>
-
-        <Panel title="Section Visibility & Order">
-          <div className="admin-visibility admin-field--wide">
-            {visibleKeys.map(key => (
-              <Toggle
-                key={key}
-                label={key}
-                checked={content.sectionVisibility[key]}
-                onChange={v => set(`content.sectionVisibility.${key}`, v)}
-              />
-            ))}
-          </div>
-          <div className="admin-section-order admin-field--wide">
-            {content.sectionOrder.map((key, index) => (
-              <div key={key}>
-                <span>
-                  {index + 1}. {key}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => moveSection(index, -1)}
-                  disabled={index === 0}
-                >
-                  <ArrowUp size={14} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => moveSection(index, 1)}
-                  disabled={index === content.sectionOrder.length - 1}
-                >
-                  <ArrowDown size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
         </Panel>
 
         <Panel title="SEO">

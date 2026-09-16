@@ -5,10 +5,17 @@ import Footer from "../components/Footer.jsx";
 import PageHero from "../components/PageHero.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 import { articles } from "../data/blogArticles.js";
+import { trpc } from "../lib/trpc";
 
 const heroImage = "/assets/starhustler-blog-page-v2_1bec9887.webp";
 
 export default function BlogPage() {
+  const query = trpc.blog.list.useQuery(undefined, { retry: 1 });
+  const cmsArticles = (query.data || []).map((post, index) => ({
+    ...post,
+    number: String(index + 1).padStart(2, "0"),
+  }));
+  const visibleArticles = [...cmsArticles, ...articles.filter(item => !cmsArticles.some(post => post.slug === item.slug))];
   return (
     <div className="interior-page blog-page">
       <Navbar />
@@ -23,9 +30,9 @@ export default function BlogPage() {
             <div className="topic-pills"><span>Memulai</span><span>AI Workflow</span><span>Personal Brand</span><span>Content</span></div>
           </div>
           <div className="article-grid">
-            {articles.map((article, index) => (
+            {visibleArticles.map((article, index) => (
               <article className="article-card" key={article.slug}>
-                <div className={`article-card__visual article-card__visual--${index + 1}`}><span>{article.number}</span><PenLine size={32} /></div>
+                <div className={`article-card__visual article-card__visual--${(index % 4) + 1}`} style={article.imageUrl ? { backgroundImage: `linear-gradient(rgba(9,19,48,.2),rgba(9,19,48,.6)),url(${article.imageUrl})`, backgroundSize: "cover" } : undefined}><span>{article.number}</span><PenLine size={32} /></div>
                 <p className="article-card__topic"><CircleDot size={13} /> {article.category}</p>
                 <h3>{article.title}</h3>
                 <p>{article.excerpt}</p>

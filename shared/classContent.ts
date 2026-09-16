@@ -56,6 +56,7 @@ export type ClassContent = {
     promoLabel: string;
     bundlingLabel: string;
     supportingText: string;
+    useGlobalPaymentUrl: boolean;
     paymentUrl: string;
   };
   intro: {
@@ -217,6 +218,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     bundlingLabel: "Paket bundling kelas online dan ebook Memulai Solopreneur",
     supportingText:
       "Kelas online Rp150.000 + ebook Memulai Solopreneur Rp150.000.",
+    useGlobalPaymentUrl: true,
     paymentUrl: DEFAULT_PAYMENT_URL,
   },
   intro: {
@@ -474,6 +476,95 @@ export const DEFAULT_CLASS_RECORD: Omit<
   featured: true,
   content: DEFAULT_CLASS_CONTENT,
 };
+
+function createCatalogueClass(
+  name: string,
+  slug: string,
+  instructor: string,
+  description: string
+): Omit<ClassRecord, "id" | "createdAt" | "updatedAt"> {
+  const content = structuredClone(DEFAULT_CLASS_CONTENT);
+  content.shortDescription = description;
+  content.fullDescription = description;
+  content.hero = {
+    ...content.hero,
+    eyebrow: name,
+    headline: name,
+    description,
+    dateBadge: "SEGERA",
+    scheduleText: "Jadwal kelas akan diumumkan",
+    deliveryText: "Informasi kelas tersedia setelah pendaftaran",
+  };
+  content.pricing = {
+    ...content.pricing,
+    priceLabel: "Harga kelas",
+    promoLabel: "Pendaftaran Kelas",
+    bundlingLabel: name,
+    supportingText: "Detail harga, jadwal, dan benefit dapat diperbarui melalui Admin Panel.",
+  };
+  content.mentor = {
+    ...content.mentor,
+    name: instructor,
+    headline: `Belajar langsung bersama ${instructor}`,
+    description: `Kelas praktis StartHustler bersama ${instructor}.`,
+    extendedDescription: "",
+  };
+  content.sectionVisibility = {
+    ...content.sectionVisibility,
+    video: false,
+    intro: false,
+    painPoints: false,
+    story: false,
+    calculation: false,
+    solution: false,
+    curriculum: false,
+    bonuses: false,
+    testimonials: false,
+  };
+  content.ebook.enabled = false;
+  content.announcement.enabled = false;
+  content.countdown.enabled = false;
+  content.floatingCta.enabled = false;
+  content.notificationSettings.enabled = false;
+  content.finalCta = {
+    ...content.finalCta,
+    title: `Daftar ${name}`,
+    description,
+  };
+  content.seo = {
+    ...content.seo,
+    title: `${name} | StartHustler`,
+    metaDescription: description,
+    ogTitle: name,
+    ogDescription: description,
+    canonicalUrl: `https://www.starthustler.com/kelas/${slug}`,
+  };
+  return {
+    name,
+    slug,
+    status: "published",
+    featured: false,
+    content,
+  };
+}
+
+export const DEFAULT_CLASS_RECORDS: Array<
+  Omit<ClassRecord, "id" | "createdAt" | "updatedAt">
+> = [
+  DEFAULT_CLASS_RECORD,
+  createCatalogueClass(
+    "Cara Setup Hermes Agent",
+    "cara-setup-hermes-agent",
+    "Dhiya Fakhar Nafi",
+    "Panduan praktis menyiapkan Hermes Agent untuk membantu pekerjaan berbasis AI."
+  ),
+  createCatalogueClass(
+    "Membuat Konten Media Sosial dengan AI",
+    "konten-media-sosial-dengan-ai",
+    "Filbert",
+    "Belajar menyusun dan memproduksi konten media sosial dengan bantuan AI."
+  ),
+];
 
 export function normalizeClassContent(
   input: Partial<ClassContent> | null | undefined

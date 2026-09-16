@@ -56,3 +56,32 @@ export const classes = pgTable("classes", {
 
 export type ClassRow = typeof classes.$inferSelect;
 export type InsertClass = typeof classes.$inferInsert;
+
+export const siteSettings = pgTable("site_settings", {
+  key: varchar("key", { length: 120 }).primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 180 }).notNull().unique(),
+  title: varchar("title", { length: 240 }).notNull(),
+  category: varchar("category", { length: 100 }).default("Catatan").notNull(),
+  excerpt: text("excerpt").notNull(),
+  imageUrl: text("imageUrl").default("").notNull(),
+  content: text("content").notNull(),
+  status: varchar("status", { length: 16 }).default("draft").notNull(),
+  createdAt: timestamp("createdAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updatedAt", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  publishedAt: timestamp("publishedAt", { withTimezone: true }),
+});
+
+export type SiteSettingRow = typeof siteSettings.$inferSelect;
+export type BlogPostRow = typeof blogPosts.$inferSelect;

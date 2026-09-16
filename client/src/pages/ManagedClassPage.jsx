@@ -65,6 +65,7 @@ export default function ManagedClassPage({ slug }) {
     { enabled: preview, retry: false }
   );
   const authQuery = trpc.auth.me.useQuery(undefined, { retry: false });
+  const settingsQuery = trpc.settings.public.useQuery(undefined, { retry: 1 });
   const queried = preview ? previewQuery.data : publicQuery.data;
   const record =
     queried ||
@@ -96,7 +97,9 @@ export default function ManagedClassPage({ slug }) {
           },
         }
       : record.content;
-  const paymentUrl = c.pricing.paymentUrl;
+  const paymentUrl = c.pricing.useGlobalPaymentUrl !== false
+    ? (settingsQuery.data?.paymentUrl || c.pricing.paymentUrl)
+    : c.pricing.paymentUrl;
   const cta = label => (
     <PrimaryButton href={paymentUrl}>
       {label || c.hero.primaryCtaLabel}

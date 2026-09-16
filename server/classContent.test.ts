@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_CLASS_CONTENT,
+  DEFAULT_CLASS_RECORDS,
   DEFAULT_PAYMENT_URL,
   normalizeClassContent,
 } from "../shared/classContent";
@@ -20,6 +21,15 @@ describe("class CMS content", () => {
     });
     expect(normalized.hero.headline).toBe("Headline baru");
     expect(normalized.pricing.paymentUrl).toBe(DEFAULT_PAYMENT_URL);
+  });
+
+  it("provides an instant CMS fallback for every catalogue class", () => {
+    expect(DEFAULT_CLASS_RECORDS.map(item => item.slug)).toEqual([
+      "kelas-solopreneur",
+      "cara-setup-hermes-agent",
+      "konten-media-sosial-dengan-ai",
+    ]);
+    expect(DEFAULT_CLASS_RECORDS.every(item => item.status === "published")).toBe(true);
   });
 });
 

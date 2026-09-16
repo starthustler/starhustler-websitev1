@@ -9,11 +9,18 @@ import BlogArticlePage from "./pages/BlogArticlePage.jsx";
 import ManagedClassPage from "./pages/ManagedClassPage.jsx";
 import AdminClassesPage from "./pages/AdminClassesPage.jsx";
 import AdminClassEditorPage from "./pages/AdminClassEditorPage.jsx";
+import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
+import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
+import AdminBlogPage from "./pages/AdminBlogPage.jsx";
+import AdminBlogEditorPage from "./pages/AdminBlogEditorPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 import { Route, Switch } from "wouter";
+import MetaPixel from "./components/MetaPixel.jsx";
 
 export default function App() {
   return (
+    <>
+    <MetaPixel />
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/kelas" component={ClassesPage} />
@@ -33,6 +40,15 @@ export default function App() {
       <Route path="/admin/kelas/:id/edit">
         {params => <AdminClassEditorPage id={params.id} />}
       </Route>
+      <Route path="/admin/blog" component={AdminBlogPage} />
+      <Route path="/admin/blog/new">
+        {() => <AdminBlogEditorPage id="new" />}
+      </Route>
+      <Route path="/admin/blog/:id/edit">
+        {params => <AdminBlogEditorPage id={params.id} />}
+      </Route>
+      <Route path="/admin/settings" component={AdminSettingsPage} />
+      <Route path="/admin" component={AdminDashboardPage} />
       <Route path="/company-training" component={CompanyTrainingPage} />
       <Route path="/komunitas" component={CommunityPage} />
       <Route path="/tentang-kami" component={AboutPage} />
@@ -40,5 +56,6 @@ export default function App() {
       <Route path="/blog/:slug" component={BlogArticlePage} />
       <Route component={NotFoundPage} />
     </Switch>
+    </>
   );
 }
