@@ -86,7 +86,16 @@ export default function ManagedClassPage({ slug }) {
     );
   }
 
-  const c = record.content;
+  const c =
+    slug === "kelas-solopreneur-salinan-711032"
+      ? {
+          ...record.content,
+          mentor: {
+            ...record.content.mentor,
+            imageUrl: "/assets/bukan-sekadar-teori.png",
+          },
+        }
+      : record.content;
   const paymentUrl = c.pricing.paymentUrl;
   const cta = label => (
     <PrimaryButton href={paymentUrl}>
