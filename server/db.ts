@@ -158,6 +158,30 @@ export async function ensureClassCmsSchema(): Promise<void> {
         { key: "meta_capi_token", value: "" },
       ])
       .onConflictDoNothing({ target: siteSettings.key });
+
+    const seedMarker = await db
+      .select({ key: siteSettings.key })
+      .from(siteSettings)
+      .where(eq(siteSettings.key, "catalogue_seed_v2"))
+      .limit(1);
+    if (!seedMarker[0]) {
+      for (const record of DEFAULT_CLASS_RECORDS.slice(1)) {
+        await db
+          .update(classes)
+          .set({
+            name: record.name,
+            status: record.status,
+            featured: record.featured ? 1 : 0,
+            contentJson: JSON.stringify(record.content),
+            updatedAt: new Date(),
+          })
+          .where(eq(classes.slug, record.slug));
+      }
+      await db
+        .insert(siteSettings)
+        .values({ key: "catalogue_seed_v2", value: "applied" })
+        .onConflictDoNothing({ target: siteSettings.key });
+    }
   })().catch(error => {
     appSchemaInitialization = null;
     throw error;
