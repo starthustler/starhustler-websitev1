@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { BookOpen, CreditCard, Gauge, GraduationCap, LogOut, Megaphone, ExternalLink } from "lucide-react";
 import { BrandLogo } from "../BrandLogo.jsx";
 import { useAuth } from "../../_core/hooks/useAuth";
 import AdminLoginPanel from "./AdminLoginPanel.jsx";
@@ -28,18 +28,22 @@ export default function AdminShell({ children }) {
     );
   return (
     <div className="admin-page">
-      <header className="admin-header">
+      <aside className="admin-sidebar">
         <BrandLogo light />
-        <nav>
-          <a href="/admin/kelas">Kelola Kelas</a>
+        <nav aria-label="Menu admin">
+          <a href="/admin"><Gauge size={17} /> Dashboard</a>
+          <a href="/admin/kelas"><GraduationCap size={17} /> Kelas</a>
+          <a href="/admin/blog"><BookOpen size={17} /> Blog</a>
+          <a href="/admin/settings#payment"><CreditCard size={17} /> Pembayaran</a>
+          <a href="/admin/settings#meta"><Megaphone size={17} /> Meta Ads</a>
           <a href="/" target="_blank" rel="noreferrer">
-            Lihat Website
+            <ExternalLink size={17} /> Lihat Website
           </a>
           <button type="button" onClick={() => auth.logout()}>
             <LogOut size={16} /> Keluar
           </button>
         </nav>
-      </header>
+      </aside>
       <main className="admin-main">{children}</main>
     </div>
   );

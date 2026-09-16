@@ -3,14 +3,17 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
   adminSessions,
+  blogPosts,
   classes,
   type InsertClass,
   type InsertUser,
   type User,
+  siteSettings,
   users,
 } from "../drizzle/schema.js";
 import {
-  DEFAULT_CLASS_RECORD,
+  DEFAULT_CLASS_RECORDS,
+  DEFAULT_PAYMENT_URL,
   normalizeClassContent,
   type ClassContent,
   type ClassRecord,
@@ -66,6 +69,32 @@ export async function ensureClassCmsSchema(): Promise<void> {
     );
     await db.execute(
       sql.raw(`
+      CREATE TABLE IF NOT EXISTS "site_settings" (
+        "key" varchar(120) PRIMARY KEY,
+        "value" text NOT NULL,
+        "updatedAt" timestamptz NOT NULL DEFAULT now()
+      )
+    `)
+    );
+    await db.execute(
+      sql.raw(`
+      CREATE TABLE IF NOT EXISTS "blog_posts" (
+        "id" serial PRIMARY KEY,
+        "slug" varchar(180) NOT NULL UNIQUE,
+        "title" varchar(240) NOT NULL,
+        "category" varchar(100) NOT NULL DEFAULT 'Catatan',
+        "excerpt" text NOT NULL,
+        "imageUrl" text NOT NULL DEFAULT '',
+        "content" text NOT NULL,
+        "status" varchar(16) NOT NULL DEFAULT 'draft',
+        "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now(),
+        "publishedAt" timestamptz
+      )
+    `)
+    );
+    await db.execute(
+      sql.raw(`
       CREATE UNIQUE INDEX IF NOT EXISTS "one_admin_idx"
       ON "users" (("role")) WHERE "role" = 'admin'
     `)
@@ -109,14 +138,26 @@ export async function ensureClassCmsSchema(): Promise<void> {
 
     await db
       .insert(classes)
-      .values({
-        name: DEFAULT_CLASS_RECORD.name,
-        slug: DEFAULT_CLASS_RECORD.slug,
-        status: DEFAULT_CLASS_RECORD.status,
-        featured: 1,
-        contentJson: JSON.stringify(DEFAULT_CLASS_RECORD.content),
-      })
+      .values(
+        DEFAULT_CLASS_RECORDS.map(record => ({
+          name: record.name,
+          slug: record.slug,
+          status: record.status,
+          featured: record.featured ? 1 : 0,
+          contentJson: JSON.stringify(record.content),
+        }))
+      )
       .onConflictDoNothing({ target: classes.slug });
+
+    await db
+      .insert(siteSettings)
+      .values([
+        { key: "payment_provider", value: "DOKU" },
+        { key: "payment_url", value: DEFAULT_PAYMENT_URL },
+        { key: "meta_pixel_id", value: "" },
+        { key: "meta_capi_token", value: "" },
+      ])
+      .onConflictDoNothing({ target: siteSettings.key });
   })().catch(error => {
     appSchemaInitialization = null;
     throw error;
@@ -393,4 +434,127 @@ export async function updateClass(
 export async function deleteClass(id: number): Promise<void> {
   const db = await requireClassDb();
   await db.delete(classes).where(eq(classes.id, id));
+}
+
+export async function getPublicSettings() {
+  const db = await requireClassDb();
+  const rows = await db.select().from(siteSettings);
+  const values = Object.fromEntries(rows.map(row => [row.key, row.value]));
+  return {
+    paymentProvider: values.payment_provider || "DOKU",
+    paymentUrl: values.payment_url || DEFAULT_PAYMENT_URL,
+    metaPixelId: values.meta_pixel_id || "",
+  };
+}
+
+export async function getAdminSettings() {
+  const db = await requireClassDb();
+  const rows = await db.select().from(siteSettings);
+  const values = Object.fromEntries(rows.map(row => [row.key, row.value]));
+  return {
+    paymentProvider: values.payment_provider || "DOKU",
+    paymentUrl: values.payment_url || DEFAULT_PAYMENT_URL,
+    metaPixelId: values.meta_pixel_id || "",
+    metaCapiConfigured: Boolean(values.meta_capi_token),
+  };
+}
+
+export async function getMetaServerSettings() {
+  const db = await requireClassDb();
+  const rows = await db.select().from(siteSettings);
+  const values = Object.fromEntries(rows.map(row => [row.key, row.value]));
+  return { pixelId: values.meta_pixel_id || "", capiToken: values.meta_capi_token || "" };
+}
+
+export async function updateAdminSettings(input: {
+  paymentProvider: string;
+  paymentUrl: string;
+  metaPixelId: string;
+  metaCapiToken?: string;
+  clearMetaCapiToken?: boolean;
+}) {
+  const db = await requireClassDb();
+  const values: Record<string, string> = {
+    payment_provider: input.paymentProvider,
+    payment_url: input.paymentUrl,
+    meta_pixel_id: input.metaPixelId,
+  };
+  if (input.clearMetaCapiToken) values.meta_capi_token = "";
+  else if (input.metaCapiToken) values.meta_capi_token = input.metaCapiToken;
+  await Promise.all(
+    Object.entries(values).map(([key, value]) =>
+      db
+        .insert(siteSettings)
+        .values({ key, value, updatedAt: new Date() })
+        .onConflictDoUpdate({
+          target: siteSettings.key,
+          set: { value, updatedAt: new Date() },
+        })
+    )
+  );
+  return getAdminSettings();
+}
+
+export type BlogPostInput = {
+  slug: string;
+  title: string;
+  category: string;
+  excerpt: string;
+  imageUrl: string;
+  content: string;
+  status: PublishStatus;
+};
+
+const toBlogPost = (row: typeof blogPosts.$inferSelect) => ({
+  ...row,
+  status: row.status === "published" ? ("published" as const) : ("draft" as const),
+  createdAt: row.createdAt.toISOString(),
+  updatedAt: row.updatedAt.toISOString(),
+  publishedAt: row.publishedAt?.toISOString() || null,
+});
+
+export async function listPublishedBlogPosts() {
+  const db = await requireClassDb();
+  const rows = await db
+    .select()
+    .from(blogPosts)
+    .where(eq(blogPosts.status, "published"))
+    .orderBy(desc(blogPosts.publishedAt), desc(blogPosts.updatedAt));
+  return rows.map(toBlogPost);
+}
+
+export async function getPublishedBlogPost(slug: string) {
+  const db = await requireClassDb();
+  const rows = await db
+    .select()
+    .from(blogPosts)
+    .where(and(eq(blogPosts.slug, slug), eq(blogPosts.status, "published")))
+    .limit(1);
+  return rows[0] ? toBlogPost(rows[0]) : undefined;
+}
+
+export async function listAllBlogPosts() {
+  const db = await requireClassDb();
+  return (await db.select().from(blogPosts).orderBy(desc(blogPosts.updatedAt))).map(toBlogPost);
+}
+
+export async function getBlogPostById(id: number) {
+  const db = await requireClassDb();
+  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+  return rows[0] ? toBlogPost(rows[0]) : undefined;
+}
+
+export async function saveBlogPost(id: number | null, input: BlogPostInput) {
+  const db = await requireClassDb();
+  const values = {
+    ...input,
+    updatedAt: new Date(),
+    publishedAt: input.status === "published" ? new Date() : null,
+  };
+  if (id) {
+    await db.update(blogPosts).set(values).where(eq(blogPosts.id, id));
+    return getBlogPostById(id);
+  }
+  const rows = await db.insert(blogPosts).values(values).returning({ id: blogPosts.id });
+  return rows[0] ? getBlogPostById(rows[0].id) : undefined;
 }

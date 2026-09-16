@@ -511,42 +511,62 @@ button { border:0; }
   background: #f4f7fc;
   min-height: 100vh;
 }
-.admin-header {
-  align-items: center;
+.admin-sidebar {
+  align-items: flex-start;
   background: var(--navy);
   color: #fff;
   display: flex;
-  justify-content: space-between;
-  min-height: 72px;
-  padding: 12px max(24px, calc((100vw - 1240px) / 2));
+  flex-direction: column;
+  inset: 0 auto 0 0;
+  padding: 25px 18px;
+  position: fixed;
+  width: 238px;
+  z-index: 90;
 }
-.admin-header .brand-logo {
+.admin-sidebar .brand-logo {
   height: 36px;
+  margin: 0 10px 29px;
   width: 155px;
 }
-.admin-header nav {
-  align-items: center;
+.admin-sidebar nav {
   display: flex;
-  gap: 22px;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
 }
-.admin-header nav a,
-.admin-header nav button {
+.admin-sidebar nav a,
+.admin-sidebar nav button {
+  align-items: center;
   background: transparent;
+  border-radius: 9px;
   color: rgba(255, 255, 255, 0.78);
   cursor: pointer;
+  display: flex;
   font-size: 14px;
   font-weight: 700;
+  gap: 10px;
+  padding: 11px 12px;
+  width: 100%;
 }
-.admin-header nav button {
-  align-items: center;
-  display: flex;
-  gap: 6px;
+.admin-sidebar nav a:hover,
+.admin-sidebar nav button:hover { background: rgba(255,255,255,.1); color:#fff; }
+.admin-sidebar nav button { margin-top: auto; }
+.admin-sidebar + .admin-main {
+  margin-left: 238px;
 }
 .admin-main {
-  margin: auto;
-  max-width: 1240px;
+  max-width: 1480px;
   padding: 48px 28px 100px;
 }
+.admin-dashboard-grid { display:grid; gap:18px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.admin-dashboard-grid a { background:#fff; border:1px solid #e1e6f0; color:var(--navy); min-height:190px; padding:28px; }
+.admin-dashboard-grid a svg { color:var(--blue); }
+.admin-dashboard-grid h2 { font-family:Poppins,sans-serif; margin:24px 0 7px; }
+.admin-dashboard-grid p { color:#687086; line-height:1.55; margin:0; }
+.admin-editor-top-grid,.admin-blog-editor-grid { align-items:start; display:grid; gap:20px; grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr); }
+.admin-editor-top-grid .admin-panel { height:100%; }
+.admin-blog-editor-grid { grid-template-columns:minmax(300px,.65fr) minmax(0,1.35fr); }
 .admin-state {
   align-items: center;
   background: #f4f7fc;
@@ -900,6 +920,21 @@ button { border:0; }
 }
 
 @media (max-width: 760px) {
+  .class-detail-page main section,
+  .class-detail-page main section h1,
+  .class-detail-page main section h2,
+  .class-detail-page main section h3,
+  .class-detail-page main section p { text-align:center; }
+  .class-detail-page main .eyebrow,
+  .class-detail-page main .center-action,
+  .class-detail-page main .class-detail-actions { justify-content:center; }
+  .class-detail-meta { justify-content:center; }
+  .class-detail-meta > span { border-left:0; padding-left:0; white-space:pre-line; }
+  .class-detail-hero__copy { margin-left:auto; margin-right:auto; }
+  .class-detail-hero__copy > .button { margin-left:auto; margin-right:auto; }
+  .class-managed-list__grid article,
+  .benefit-grid div { align-items:center; flex-direction:column; justify-content:center; text-align:center; }
+  .class-detail-mentor__card { text-align:center; }
   .class-announcement {
     font-size: 12px;
     flex-wrap: wrap;
@@ -970,22 +1005,12 @@ button { border:0; }
     bottom: 111px;
     min-height: 44px;
   }
-  .admin-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-  }
-  .admin-header nav {
-    flex-wrap: wrap;
-    gap: 13px;
-    width: 100%;
-  }
-  .admin-header nav a,
-  .admin-header nav button {
-    align-items: center;
-    display: inline-flex;
-    min-height: 44px;
-  }
+  .admin-sidebar { inset:0 0 auto; overflow-x:auto; padding:12px 14px; position:relative; width:100%; }
+  .admin-sidebar .brand-logo { margin:0 0 10px; }
+  .admin-sidebar nav { flex-direction:row; min-width:max-content; }
+  .admin-sidebar nav a,.admin-sidebar nav button { min-height:44px; width:auto; }
+  .admin-sidebar nav button { margin:0; }
+  .admin-sidebar + .admin-main { margin-left:0; }
   .admin-main {
     padding: 32px 14px 80px;
   }
@@ -1016,6 +1041,7 @@ button { border:0; }
   .admin-form-grid {
     grid-template-columns: 1fr;
   }
+  .admin-dashboard-grid,.admin-editor-top-grid,.admin-blog-editor-grid { grid-template-columns:1fr; }
   .admin-panel {
     padding: 20px 15px;
   }
@@ -1161,4 +1187,3 @@ button { border:0; }
     grid-template-columns: 82px minmax(0, 1fr);
   }
 }
-

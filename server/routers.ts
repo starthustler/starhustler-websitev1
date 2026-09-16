@@ -1,5 +1,6 @@
 import {
   DEFAULT_CLASS_CONTENT,
+  DEFAULT_CLASS_RECORDS,
   normalizeClassContent,
 } from "../shared/classContent.js";
 import {
@@ -29,9 +30,31 @@ const classInput = z.object({
   featured: z.boolean(),
   content: z.record(z.string(), z.unknown()),
 });
+const settingsInput = z.object({
+  paymentProvider: z.string().trim().min(2).max(80),
+  paymentUrl: z.string().trim().url().max(1000),
+  metaPixelId: z.string().trim().max(80),
+  metaCapiToken: z.string().trim().max(1000).optional(),
+  clearMetaCapiToken: z.boolean().optional(),
+});
+const blogInput = z.object({
+  title: z.string().trim().min(2).max(240),
+  slug: slugSchema,
+  category: z.string().trim().min(2).max(100),
+  excerpt: z.string().trim().min(2).max(1000),
+  imageUrl: z.string().trim().max(2000),
+  content: z.string().trim().min(2).max(100000),
+  status: z.enum(["draft", "published"]),
+});
 
 const notFound = () =>
   new TRPCError({ code: "NOT_FOUND", message: "Kelas tidak ditemukan" });
+const fallbackClass = (slug: string) => {
+  const record = DEFAULT_CLASS_RECORDS.find(item => item.slug === slug);
+  return record
+    ? { ...record, id: 0, createdAt: new Date(0).toISOString(), updatedAt: new Date(0).toISOString() }
+    : undefined;
+};
 
 const credentialsSchema = z.object({
   email: z.string().trim().email().max(320),
@@ -118,18 +141,7 @@ export const appRouter = router({
         return await db.listPublishedClasses();
       } catch (error) {
         console.error("[ClassCMS] Public list fallback:", error);
-        return [
-          {
-            id: 0,
-            name: "Kelas Solopreneur",
-            slug: "kelas-solopreneur",
-            status: "published" as const,
-            featured: true,
-            content: DEFAULT_CLASS_CONTENT,
-            createdAt: new Date(0).toISOString(),
-            updatedAt: new Date(0).toISOString(),
-          },
-        ];
+        return DEFAULT_CLASS_RECORDS;
       }
     }),
     bySlug: publicProcedure
@@ -137,37 +149,84 @@ export const appRouter = router({
       .query(async ({ input }) => {
         try {
           const record = await db.getPublishedClassBySlug(input.slug);
-          if (!record && input.slug === "kelas-solopreneur") {
-            return {
-              id: 0,
-              name: "Kelas Solopreneur",
-              slug: "kelas-solopreneur",
-              status: "published" as const,
-              featured: true,
-              content: DEFAULT_CLASS_CONTENT,
-              createdAt: new Date(0).toISOString(),
-              updatedAt: new Date(0).toISOString(),
-            };
+          if (!record) {
+            const fallback = fallbackClass(input.slug);
+            if (fallback) return fallback;
+            throw notFound();
           }
-          if (!record) throw notFound();
           return record;
         } catch (error) {
           if (error instanceof TRPCError) throw error;
           console.error("[ClassCMS] Public class fallback:", error);
-          if (input.slug === "kelas-solopreneur") {
-            return {
-              id: 0,
-              name: "Kelas Solopreneur",
-              slug: "kelas-solopreneur",
-              status: "published" as const,
-              featured: true,
-              content: DEFAULT_CLASS_CONTENT,
-              createdAt: new Date(0).toISOString(),
-              updatedAt: new Date(0).toISOString(),
-            };
-          }
+          const fallback = fallbackClass(input.slug);
+          if (fallback) return fallback;
           throw notFound();
         }
+      }),
+  }),
+  settings: router({
+    public: publicProcedure.query(async () => {
+      try {
+        return await db.getPublicSettings();
+      } catch {
+        return {
+          paymentProvider: "DOKU",
+          paymentUrl: DEFAULT_CLASS_CONTENT.pricing.paymentUrl,
+          metaPixelId: "",
+        };
+      }
+    }),
+  }),
+  tracking: router({
+    pageView: publicProcedure
+      .input(z.object({ eventId: z.string().uuid(), url: z.string().url().max(2000) }))
+      .mutation(async ({ input, ctx }) => {
+        const target = new URL(input.url);
+        if (!target.hostname.endsWith("starthustler.com") && target.hostname !== "localhost") return { sent: false };
+        const origin = ctx.req.get("origin");
+        if (origin && new URL(origin).origin !== target.origin) return { sent: false };
+        const meta = await db.getMetaServerSettings();
+        if (!meta.pixelId || !meta.capiToken) return { sent: false };
+        const response = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(meta.pixelId)}/events?access_token=${encodeURIComponent(meta.capiToken)}`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ data: [{ event_name: "PageView", event_time: Math.floor(Date.now() / 1000), event_id: input.eventId, action_source: "website", event_source_url: input.url, user_data: { client_ip_address: ctx.req.ip, client_user_agent: ctx.req.get("user-agent") || "" } }] }),
+        });
+        return { sent: response.ok };
+      }),
+  }),
+  blog: router({
+    list: publicProcedure.query(async () => {
+      try {
+        return await db.listPublishedBlogPosts();
+      } catch {
+        return [];
+      }
+    }),
+    bySlug: publicProcedure
+      .input(z.object({ slug: slugSchema }))
+      .query(({ input }) => db.getPublishedBlogPost(input.slug)),
+  }),
+  settingsAdmin: router({
+    get: adminProcedure.query(() => db.getAdminSettings()),
+    update: adminProcedure.input(settingsInput).mutation(({ input }) =>
+      db.updateAdminSettings(input)
+    ),
+  }),
+  blogAdmin: router({
+    list: adminProcedure.query(() => db.listAllBlogPosts()),
+    byId: adminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        const post = await db.getBlogPostById(input.id);
+        if (!post) throw new TRPCError({ code: "NOT_FOUND", message: "Artikel tidak ditemukan" });
+        return post;
+      }),
+    save: adminProcedure
+      .input(blogInput.extend({ id: z.number().int().positive().nullable() }))
+      .mutation(({ input }) => {
+        const { id, ...post } = input;
+        return db.saveBlogPost(id, post);
       }),
   }),
   classAdmin: router({

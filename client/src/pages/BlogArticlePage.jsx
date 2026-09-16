@@ -5,13 +5,33 @@ import Footer from "../components/Footer.jsx";
 import Navbar from "../components/Navbar.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
 import { getArticleBySlug } from "../data/blogArticles.js";
+import { trpc } from "../lib/trpc";
 import "../styles/blogArticle.css";
 import NotFoundPage from "./NotFoundPage.jsx";
 
 export default function BlogArticlePage() {
   const [, params] = useRoute("/blog/:slug");
-  const article = getArticleBySlug(params?.slug);
+  const query = trpc.blog.bySlug.useQuery({ slug: params?.slug || "artikel" }, { enabled: Boolean(params?.slug), retry: 1 });
+  const cms = query.data;
+  const article = cms ? {
+    ...cms,
+    number: "CMS",
+    lead: cms.excerpt,
+    readTime: `${Math.max(1, Math.ceil(cms.content.split(/\s+/).length / 200))} menit baca`,
+    publishedAt: new Date(cms.publishedAt || cms.updatedAt).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }),
+    accent: "blue",
+    sections: cms.content.split(/\n\s*\n/).reduce((sections, block) => {
+      if (block.trim().startsWith("## ")) sections.push({ heading: block.trim().slice(3), paragraphs: [] });
+      else {
+        if (!sections.length) sections.push({ heading: "Catatan", paragraphs: [] });
+        sections.at(-1).paragraphs.push(block.trim());
+      }
+      return sections;
+    }, []),
+    takeaway: cms.excerpt,
+  } : getArticleBySlug(params?.slug);
 
+  if (!article && query.isLoading) return null;
   if (!article) return <NotFoundPage />;
 
   return (
@@ -30,7 +50,7 @@ export default function BlogArticlePage() {
                 <span>{article.publishedAt}</span>
               </div>
             </div>
-            <div className={`article-detail-hero__visual article-detail-hero__visual--${article.accent}`} aria-hidden="true">
+            <div className={`article-detail-hero__visual article-detail-hero__visual--${article.accent}`} style={article.imageUrl ? { backgroundImage: `linear-gradient(rgba(9,19,48,.25),rgba(9,19,48,.62)),url(${article.imageUrl})`, backgroundSize: "cover" } : undefined} aria-hidden="true">
               <span className="article-detail-hero__orbit article-detail-hero__orbit--one" />
               <span className="article-detail-hero__orbit article-detail-hero__orbit--two" />
               <span className="article-detail-hero__number">{article.number}</span>
