@@ -1,5 +1,5 @@
 import { ArrowRight, Check, Gift, Pencil, Sparkles } from "lucide-react";
-import { DEFAULT_CLASS_CONTENT, formatRupiah } from "@shared/classContent";
+import { DEFAULT_CLASS_RECORDS, formatRupiah } from "@shared/classContent";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { PrimaryButton } from "../components/PrimaryButton.jsx";
@@ -13,14 +13,10 @@ import {
   FloatingNotification,
 } from "../components/class/ClassConversion.jsx";
 
-const fallbackRecord = slug => ({
-  id: 0,
-  name: "Kelas Solopreneur",
-  slug,
-  status: "published",
-  featured: true,
-  content: DEFAULT_CLASS_CONTENT,
-});
+const fallbackRecord = slug => {
+  const record = DEFAULT_CLASS_RECORDS.find(item => item.slug === slug);
+  return record ? { ...record, id: 0 } : null;
+};
 const active = items => (items || []).filter(item => item.enabled);
 
 function ManagedListSection({
@@ -69,7 +65,7 @@ export default function ManagedClassPage({ slug }) {
   const queried = preview ? previewQuery.data : publicQuery.data;
   const record =
     queried ||
-    (slug === "kelas-solopreneur" && !preview ? fallbackRecord(slug) : null);
+    (!preview ? fallbackRecord(slug) : null);
   const loading = preview ? previewQuery.isLoading : publicQuery.isLoading;
 
   if (!record) {

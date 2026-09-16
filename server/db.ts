@@ -182,6 +182,33 @@ export async function ensureClassCmsSchema(): Promise<void> {
         .values({ key: "catalogue_seed_v2", value: "applied" })
         .onConflictDoNothing({ target: siteSettings.key });
     }
+
+    const mentorImageMarker = await db
+      .select({ key: siteSettings.key })
+      .from(siteSettings)
+      .where(eq(siteSettings.key, "mentor_image_v2"))
+      .limit(1);
+    if (!mentorImageMarker[0]) {
+      const solopreneurRows = await db
+        .select()
+        .from(classes)
+        .where(eq(classes.slug, "kelas-solopreneur"))
+        .limit(1);
+      if (solopreneurRows[0]) {
+        const content = parseContent(solopreneurRows[0].contentJson);
+        if (content.mentor.imageUrl === "/assets/starhustler-course-creators_4af6efe2.webp") {
+          content.mentor.imageUrl = "/assets/bukan-sekadar-teori.png";
+          await db
+            .update(classes)
+            .set({ contentJson: JSON.stringify(content), updatedAt: new Date() })
+            .where(eq(classes.id, solopreneurRows[0].id));
+        }
+      }
+      await db
+        .insert(siteSettings)
+        .values({ key: "mentor_image_v2", value: "applied" })
+        .onConflictDoNothing({ target: siteSettings.key });
+    }
   })().catch(error => {
     appSchemaInitialization = null;
     throw error;
