@@ -292,7 +292,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
       "Abdul Arfan adalah programmer berpengalaman yang sudah bekerja di bidang teknologi selama bertahun-tahun. Ia pernah menjadi Software Engineer di beberapa perusahaan teknologi, termasuk Bank Aladin Syariah.",
     extendedDescription:
       "Ia pernah membangun aplikasi yang diunduh 5 juta orang dengan penghasilan sekitar 700 juta rupiah. Sekarang, ia akan menunjukkan bagaimana AI bisa membantu lebih banyak orang masuk ke dunia pembuatan produk digital.",
-    imageUrl: "/assets/starhustler-course-creators_4af6efe2.webp",
+    imageUrl: "/assets/bukan-sekadar-teori.png",
     proofLabel: "Pemateri telah membuktikannya!",
   },
   ebook: {
