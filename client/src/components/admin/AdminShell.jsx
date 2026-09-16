@@ -1,7 +1,7 @@
-import { LogOut, ShieldCheck } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { BrandLogo } from "../BrandLogo.jsx";
 import { useAuth } from "../../_core/hooks/useAuth";
-import { startLogin } from "../../const";
+import AdminLoginPanel from "./AdminLoginPanel.jsx";
 
 export default function AdminShell({ children }) {
   const auth = useAuth();
@@ -11,21 +11,7 @@ export default function AdminShell({ children }) {
         <p>Memeriksa akses admin…</p>
       </main>
     );
-  if (!auth.user)
-    return (
-      <main className="admin-state">
-        <ShieldCheck size={40} />
-        <h1>Admin StartHustler</h1>
-        <p>Masuk dengan akun pemilik untuk mengelola kelas.</p>
-        <button
-          className="button button--primary"
-          type="button"
-          onClick={startLogin}
-        >
-          Masuk sebagai Admin
-        </button>
-      </main>
-    );
+  if (!auth.user) return <AdminLoginPanel onAuthenticated={auth.acceptUser} />;
   if (auth.user.role !== "admin")
     return (
       <main className="admin-state">

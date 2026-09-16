@@ -1,13 +1,18 @@
-import { COOKIE_NAME } from "../shared/const";
 import {
   DEFAULT_CLASS_CONTENT,
   normalizeClassContent,
-} from "../shared/classContent";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc";
-import { storagePut } from "./storage";
-import * as db from "./db";
+} from "../shared/classContent.js";
+import {
+  clearLocalSession,
+  createLocalSession,
+  hashPassword,
+  toSafeUser,
+  verifyPassword,
+} from "./_core/localAuth.js";
+import { systemRouter } from "./_core/systemRouter.js";
+import { adminProcedure, publicProcedure, router } from "./_core/trpc.js";
+import { storagePut } from "./storage.js";
+import * as db from "./db.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -28,14 +33,80 @@ const classInput = z.object({
 const notFound = () =>
   new TRPCError({ code: "NOT_FOUND", message: "Kelas tidak ditemukan" });
 
+const credentialsSchema = z.object({
+  email: z.string().trim().email().max(320),
+  password: z.string().min(12).max(128),
+});
+
 export const appRouter = router({
   // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    status: publicProcedure.query(async () => {
+      if (!process.env.DATABASE_URL) {
+        return { databaseConfigured: false, adminConfigured: false };
+      }
+      try {
+        return {
+          databaseConfigured: true,
+          adminConfigured: await db.hasAdminUser(),
+        };
+      } catch {
+        return { databaseConfigured: true, adminConfigured: false };
+      }
+    }),
+    me: publicProcedure.query(opts =>
+      opts.ctx.user ? toSafeUser(opts.ctx.user) : null
+    ),
+    setup: publicProcedure
+      .input(
+        credentialsSchema.extend({
+          name: z.string().trim().min(2).max(120),
+        })
+      )
+      .mutation(async ({ input, ctx }) => {
+        if (!process.env.DATABASE_URL) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: "Database admin belum terhubung",
+          });
+        }
+        if (await db.hasAdminUser()) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Admin sudah dikonfigurasi",
+          });
+        }
+        const user = await db.createInitialAdmin({
+          name: input.name,
+          email: input.email,
+          passwordHash: await hashPassword(input.password),
+        });
+        await createLocalSession(ctx.req, ctx.res, user.id);
+        return toSafeUser(user);
+      }),
+    login: publicProcedure
+      .input(credentialsSchema)
+      .mutation(async ({ input, ctx }) => {
+        const user = process.env.DATABASE_URL
+          ? await db.getAdminByEmail(input.email)
+          : undefined;
+        const valid = Boolean(
+          user?.passwordHash &&
+            (await verifyPassword(input.password, user.passwordHash))
+        );
+        if (!valid || !user) {
+          await new Promise(resolve => setTimeout(resolve, 350));
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Email atau password salah",
+          });
+        }
+        await createLocalSession(ctx.req, ctx.res, user.id);
+        return toSafeUser(user);
+      }),
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      await clearLocalSession(ctx.req, ctx.res);
       return {
         success: true,
       } as const;

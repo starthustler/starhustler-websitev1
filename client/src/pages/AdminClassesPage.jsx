@@ -72,6 +72,7 @@ export default function AdminClassesPage() {
                     <button
                       type="button"
                       title="Duplicate"
+                      aria-label={`Duplicate ${item.name}`}
                       onClick={() => duplicate.mutate({ id: item.id })}
                     >
                       <Copy size={16} />
@@ -81,6 +82,7 @@ export default function AdminClassesPage() {
                       title={
                         item.status === "published" ? "Unpublish" : "Publish"
                       }
+                      aria-label={`${item.status === "published" ? "Unpublish" : "Publish"} ${item.name}`}
                       onClick={() =>
                         status.mutate({
                           id: item.id,

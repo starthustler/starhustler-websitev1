@@ -93,6 +93,10 @@ export function useAuth(options?: UseAuthOptions) {
   return {
     ...state,
     refresh: () => meQuery.refetch(),
+    acceptUser: async (user: NonNullable<typeof meQuery.data>) => {
+      utils.auth.me.setData(undefined, user);
+      await utils.auth.me.invalidate();
+    },
     logout,
   };
 }
