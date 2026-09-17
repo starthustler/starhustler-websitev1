@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { ArrowRight, Check, Gift, Pencil, Sparkles } from "lucide-react";
 import { DEFAULT_CLASS_RECORDS, formatRupiah } from "@shared/classContent";
 import Navbar from "../components/Navbar.jsx";
@@ -12,6 +13,7 @@ import {
   FloatingCta,
   FloatingNotification,
 } from "../components/class/ClassConversion.jsx";
+import { useMetaTracking } from "../lib/metaTracking.js";
 
 const fallbackRecord = slug => {
   const record = DEFAULT_CLASS_RECORDS.find(item => item.slug === slug);
@@ -62,13 +64,36 @@ export default function ManagedClassPage({ slug }) {
   );
   const authQuery = trpc.auth.me.useQuery(undefined, { retry: false });
   const settingsQuery = trpc.settings.public.useQuery(undefined, { retry: 1 });
+  const meta = useMetaTracking();
+  const trackedView = useRef("");
   const queried = preview ? previewQuery.data : publicQuery.data;
-  const record =
-    queried ||
-    (!preview ? fallbackRecord(slug) : null);
+  const record = queried || (!preview ? fallbackRecord(slug) : null);
   const loading = preview ? previewQuery.isLoading : publicQuery.isLoading;
+  const c = record
+    ? slug === "kelas-solopreneur-salinan-711032"
+      ? {
+          ...record.content,
+          mentor: {
+            ...record.content.mentor,
+            imageUrl: "/assets/bukan-sekadar-teori.png",
+          },
+        }
+      : record.content
+    : null;
 
-  if (!record) {
+  useEffect(() => {
+    if (!record || !c || preview || trackedView.current === slug) return;
+    trackedView.current = slug;
+    void meta.track("ViewContent", {
+      content_name: record.name,
+      content_ids: [slug],
+      content_type: "product",
+      value: c.pricing.sellingPrice,
+      currency: "IDR",
+    });
+  }, [record?.id, slug, preview]);
+
+  if (!record || !c) {
     return (
       <div className="site-page class-detail-page">
         <Navbar />
@@ -83,21 +108,37 @@ export default function ManagedClassPage({ slug }) {
     );
   }
 
-  const c =
-    slug === "kelas-solopreneur-salinan-711032"
-      ? {
-          ...record.content,
-          mentor: {
-            ...record.content.mentor,
-            imageUrl: "/assets/bukan-sekadar-teori.png",
-          },
-        }
-      : record.content;
-  const paymentUrl = c.pricing.useGlobalPaymentUrl !== false
-    ? (settingsQuery.data?.paymentUrl || c.pricing.paymentUrl)
-    : c.pricing.paymentUrl;
+  const paymentUrl =
+    c.pricing.useGlobalPaymentUrl !== false
+      ? settingsQuery.data?.paymentUrl || c.pricing.paymentUrl
+      : c.pricing.paymentUrl;
+  const eventData = {
+    content_name: record.name,
+    content_ids: [slug],
+    content_type: "product",
+    value: c.pricing.sellingPrice,
+    currency: "IDR",
+  };
+  const handlePaymentClick = (event, href = paymentUrl) => {
+    if (event.defaultPrevented) return;
+    if (
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      void meta.track("InitiateCheckout", eventData);
+      return;
+    }
+    event.preventDefault();
+    void meta.trackCheckoutAndNavigate(href, eventData);
+  };
   const cta = label => (
-    <PrimaryButton href={paymentUrl}>
+    <PrimaryButton
+      href={paymentUrl}
+      onClick={event => handlePaymentClick(event, paymentUrl)}
+    >
       {label || c.hero.primaryCtaLabel}
       <ArrowRight size={16} />
     </PrimaryButton>
@@ -284,7 +325,11 @@ export default function ManagedClassPage({ slug }) {
       className={`site-page class-detail-page${c.floatingCta.enabled ? " has-class-floating-cta" : ""}`}
     >
       <ClassSeo seo={c.seo} faq={c.faq} />
-      <AnnouncementBar config={c.announcement} paymentUrl={paymentUrl} />
+      <AnnouncementBar
+        config={c.announcement}
+        paymentUrl={paymentUrl}
+        onPaymentClick={handlePaymentClick}
+      />
       <Navbar />
       <main>
         {visibility.hero !== false && (
@@ -328,11 +373,13 @@ export default function ManagedClassPage({ slug }) {
         settings={c.notificationSettings}
         paymentUrl={paymentUrl}
         hasFloatingCta={c.floatingCta.enabled}
+        onPaymentClick={handlePaymentClick}
       />
       <FloatingCta
         config={c.floatingCta}
         countdown={c.countdown}
         paymentUrl={paymentUrl}
+        onPaymentClick={handlePaymentClick}
       />
     </div>
   );

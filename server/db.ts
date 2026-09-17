@@ -156,6 +156,12 @@ export async function ensureClassCmsSchema(): Promise<void> {
         { key: "payment_url", value: DEFAULT_PAYMENT_URL },
         { key: "meta_pixel_id", value: "" },
         { key: "meta_capi_token", value: "" },
+        { key: "meta_test_event_code", value: "" },
+        { key: "meta_event_page_view", value: "true" },
+        { key: "meta_event_view_content", value: "true" },
+        { key: "meta_event_lead", value: "true" },
+        { key: "meta_event_initiate_checkout", value: "true" },
+        { key: "meta_event_purchase", value: "true" },
       ])
       .onConflictDoNothing({ target: siteSettings.key });
 
@@ -196,11 +202,17 @@ export async function ensureClassCmsSchema(): Promise<void> {
         .limit(1);
       if (solopreneurRows[0]) {
         const content = parseContent(solopreneurRows[0].contentJson);
-        if (content.mentor.imageUrl === "/assets/starhustler-course-creators_4af6efe2.webp") {
+        if (
+          content.mentor.imageUrl ===
+          "/assets/starhustler-course-creators_4af6efe2.webp"
+        ) {
           content.mentor.imageUrl = "/assets/bukan-sekadar-teori.png";
           await db
             .update(classes)
-            .set({ contentJson: JSON.stringify(content), updatedAt: new Date() })
+            .set({
+              contentJson: JSON.stringify(content),
+              updatedAt: new Date(),
+            })
             .where(eq(classes.id, solopreneurRows[0].id));
         }
       }
@@ -495,6 +507,13 @@ export async function getPublicSettings() {
     paymentProvider: values.payment_provider || "DOKU",
     paymentUrl: values.payment_url || DEFAULT_PAYMENT_URL,
     metaPixelId: values.meta_pixel_id || "",
+    metaEvents: {
+      pageView: values.meta_event_page_view !== "false",
+      viewContent: values.meta_event_view_content !== "false",
+      lead: values.meta_event_lead !== "false",
+      initiateCheckout: values.meta_event_initiate_checkout !== "false",
+      purchase: values.meta_event_purchase !== "false",
+    },
   };
 }
 
@@ -507,14 +526,44 @@ export async function getAdminSettings() {
     paymentUrl: values.payment_url || DEFAULT_PAYMENT_URL,
     metaPixelId: values.meta_pixel_id || "",
     metaCapiConfigured: Boolean(values.meta_capi_token),
+    metaTestEventCodeConfigured: Boolean(values.meta_test_event_code),
+    metaEvents: {
+      pageView: values.meta_event_page_view !== "false",
+      viewContent: values.meta_event_view_content !== "false",
+      lead: values.meta_event_lead !== "false",
+      initiateCheckout: values.meta_event_initiate_checkout !== "false",
+      purchase: values.meta_event_purchase !== "false",
+    },
+    metaLastServerEvent: parseMetaLastEvent(values.meta_last_server_event),
   };
+}
+
+function parseMetaLastEvent(value?: string) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function getMetaServerSettings() {
   const db = await requireClassDb();
   const rows = await db.select().from(siteSettings);
   const values = Object.fromEntries(rows.map(row => [row.key, row.value]));
-  return { pixelId: values.meta_pixel_id || "", capiToken: values.meta_capi_token || "" };
+  return {
+    pixelId: values.meta_pixel_id || "",
+    capiToken: values.meta_capi_token || "",
+    testEventCode: values.meta_test_event_code || "",
+    events: {
+      pageView: values.meta_event_page_view !== "false",
+      viewContent: values.meta_event_view_content !== "false",
+      lead: values.meta_event_lead !== "false",
+      initiateCheckout: values.meta_event_initiate_checkout !== "false",
+      purchase: values.meta_event_purchase !== "false",
+    },
+  };
 }
 
 export async function updateAdminSettings(input: {
@@ -523,15 +572,32 @@ export async function updateAdminSettings(input: {
   metaPixelId: string;
   metaCapiToken?: string;
   clearMetaCapiToken?: boolean;
+  metaTestEventCode?: string;
+  clearMetaTestEventCode?: boolean;
+  metaEvents: {
+    pageView: boolean;
+    viewContent: boolean;
+    lead: boolean;
+    initiateCheckout: boolean;
+    purchase: boolean;
+  };
 }) {
   const db = await requireClassDb();
   const values: Record<string, string> = {
     payment_provider: input.paymentProvider,
     payment_url: input.paymentUrl,
     meta_pixel_id: input.metaPixelId,
+    meta_event_page_view: String(input.metaEvents.pageView),
+    meta_event_view_content: String(input.metaEvents.viewContent),
+    meta_event_lead: String(input.metaEvents.lead),
+    meta_event_initiate_checkout: String(input.metaEvents.initiateCheckout),
+    meta_event_purchase: String(input.metaEvents.purchase),
   };
   if (input.clearMetaCapiToken) values.meta_capi_token = "";
   else if (input.metaCapiToken) values.meta_capi_token = input.metaCapiToken;
+  if (input.clearMetaTestEventCode) values.meta_test_event_code = "";
+  else if (input.metaTestEventCode)
+    values.meta_test_event_code = input.metaTestEventCode;
   await Promise.all(
     Object.entries(values).map(([key, value]) =>
       db
@@ -546,6 +612,26 @@ export async function updateAdminSettings(input: {
   return getAdminSettings();
 }
 
+export async function setMetaLastServerEvent(value: {
+  eventName: string;
+  eventId: string;
+  sentAt: string;
+  status: "sent" | "failed" | "skipped";
+}) {
+  const db = await requireClassDb();
+  await db
+    .insert(siteSettings)
+    .values({
+      key: "meta_last_server_event",
+      value: JSON.stringify(value),
+      updatedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: siteSettings.key,
+      set: { value: JSON.stringify(value), updatedAt: new Date() },
+    });
+}
+
 export type BlogPostInput = {
   slug: string;
   title: string;
@@ -558,7 +644,8 @@ export type BlogPostInput = {
 
 const toBlogPost = (row: typeof blogPosts.$inferSelect) => ({
   ...row,
-  status: row.status === "published" ? ("published" as const) : ("draft" as const),
+  status:
+    row.status === "published" ? ("published" as const) : ("draft" as const),
   createdAt: row.createdAt.toISOString(),
   updatedAt: row.updatedAt.toISOString(),
   publishedAt: row.publishedAt?.toISOString() || null,
@@ -586,12 +673,18 @@ export async function getPublishedBlogPost(slug: string) {
 
 export async function listAllBlogPosts() {
   const db = await requireClassDb();
-  return (await db.select().from(blogPosts).orderBy(desc(blogPosts.updatedAt))).map(toBlogPost);
+  return (
+    await db.select().from(blogPosts).orderBy(desc(blogPosts.updatedAt))
+  ).map(toBlogPost);
 }
 
 export async function getBlogPostById(id: number) {
   const db = await requireClassDb();
-  const rows = await db.select().from(blogPosts).where(eq(blogPosts.id, id)).limit(1);
+  const rows = await db
+    .select()
+    .from(blogPosts)
+    .where(eq(blogPosts.id, id))
+    .limit(1);
   return rows[0] ? toBlogPost(rows[0]) : undefined;
 }
 
@@ -606,6 +699,9 @@ export async function saveBlogPost(id: number | null, input: BlogPostInput) {
     await db.update(blogPosts).set(values).where(eq(blogPosts.id, id));
     return getBlogPostById(id);
   }
-  const rows = await db.insert(blogPosts).values(values).returning({ id: blogPosts.id });
+  const rows = await db
+    .insert(blogPosts)
+    .values(values)
+    .returning({ id: blogPosts.id });
   return rows[0] ? getBlogPostById(rows[0].id) : undefined;
 }

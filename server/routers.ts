@@ -14,6 +14,7 @@ import { systemRouter } from "./_core/systemRouter.js";
 import { adminProcedure, publicProcedure, router } from "./_core/trpc.js";
 import { storagePut } from "./storage.js";
 import * as db from "./db.js";
+import { sendMetaEvent, type MetaEventName } from "./metaTracking.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
@@ -36,6 +37,26 @@ const settingsInput = z.object({
   metaPixelId: z.string().trim().max(80),
   metaCapiToken: z.string().trim().max(1000).optional(),
   clearMetaCapiToken: z.boolean().optional(),
+  metaTestEventCode: z.string().trim().max(100).optional(),
+  clearMetaTestEventCode: z.boolean().optional(),
+  metaEvents: z.object({
+    pageView: z.boolean(),
+    viewContent: z.boolean(),
+    lead: z.boolean(),
+    initiateCheckout: z.boolean(),
+    purchase: z.boolean(),
+  }),
+});
+const publicMetaEventInput = z.object({
+  eventName: z.enum(["PageView", "ViewContent", "Lead", "InitiateCheckout"]),
+  eventId: z.string().uuid(),
+  url: z.string().url().max(2000),
+  contentName: z.string().trim().max(240).optional(),
+  contentIds: z.array(z.string().trim().min(1).max(180)).max(20).optional(),
+  value: z.number().finite().nonnegative().max(1_000_000_000).optional(),
+  currency: z.literal("IDR").optional(),
+  fbp: z.string().trim().max(255).optional(),
+  fbc: z.string().trim().max(255).optional(),
 });
 const blogInput = z.object({
   title: z.string().trim().min(2).max(240),
@@ -52,7 +73,12 @@ const notFound = () =>
 const fallbackClass = (slug: string) => {
   const record = DEFAULT_CLASS_RECORDS.find(item => item.slug === slug);
   return record
-    ? { ...record, id: 0, createdAt: new Date(0).toISOString(), updatedAt: new Date(0).toISOString() }
+    ? {
+        ...record,
+        id: 0,
+        createdAt: new Date(0).toISOString(),
+        updatedAt: new Date(0).toISOString(),
+      }
     : undefined;
 };
 
@@ -116,7 +142,7 @@ export const appRouter = router({
           : undefined;
         const valid = Boolean(
           user?.passwordHash &&
-            (await verifyPassword(input.password, user.passwordHash))
+          (await verifyPassword(input.password, user.passwordHash))
         );
         if (!valid || !user) {
           await new Promise(resolve => setTimeout(resolve, 350));
@@ -173,26 +199,53 @@ export const appRouter = router({
           paymentProvider: "DOKU",
           paymentUrl: DEFAULT_CLASS_CONTENT.pricing.paymentUrl,
           metaPixelId: "",
+          metaEvents: {
+            pageView: true,
+            viewContent: true,
+            lead: true,
+            initiateCheckout: true,
+            purchase: true,
+          },
         };
       }
     }),
   }),
   tracking: router({
-    pageView: publicProcedure
-      .input(z.object({ eventId: z.string().uuid(), url: z.string().url().max(2000) }))
+    event: publicProcedure
+      .input(publicMetaEventInput)
       .mutation(async ({ input, ctx }) => {
         const target = new URL(input.url);
-        if (!target.hostname.endsWith("starthustler.com") && target.hostname !== "localhost") return { sent: false };
+        const validHost =
+          target.hostname === "starthustler.com" ||
+          target.hostname.endsWith(".starthustler.com") ||
+          target.hostname === "localhost";
+        if (!validHost) return { sent: false, status: "skipped" as const };
         const origin = ctx.req.get("origin");
-        if (origin && new URL(origin).origin !== target.origin) return { sent: false };
-        const meta = await db.getMetaServerSettings();
-        if (!meta.pixelId || !meta.capiToken) return { sent: false };
-        const response = await fetch(`https://graph.facebook.com/v21.0/${encodeURIComponent(meta.pixelId)}/events?access_token=${encodeURIComponent(meta.capiToken)}`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ data: [{ event_name: "PageView", event_time: Math.floor(Date.now() / 1000), event_id: input.eventId, action_source: "website", event_source_url: input.url, user_data: { client_ip_address: ctx.req.ip, client_user_agent: ctx.req.get("user-agent") || "" } }] }),
+        if (origin && new URL(origin).origin !== target.origin)
+          return { sent: false, status: "skipped" as const };
+        return sendMetaEvent({
+          eventName: input.eventName as MetaEventName,
+          eventId: input.eventId,
+          sourceUrl: input.url,
+          customData:
+            input.contentName || input.contentIds || input.value !== undefined
+              ? {
+                  content_name: input.contentName,
+                  content_ids: input.contentIds,
+                  content_type: input.contentIds?.length
+                    ? "product"
+                    : undefined,
+                  value: input.value,
+                  currency: input.currency,
+                }
+              : undefined,
+          userData: {
+            clientIp: ctx.req.ip,
+            clientUserAgent: ctx.req.get("user-agent") || "",
+            fbp: input.fbp,
+            fbc: input.fbc,
+          },
         });
-        return { sent: response.ok };
       }),
   }),
   blog: router({
@@ -209,9 +262,31 @@ export const appRouter = router({
   }),
   settingsAdmin: router({
     get: adminProcedure.query(() => db.getAdminSettings()),
-    update: adminProcedure.input(settingsInput).mutation(({ input }) =>
-      db.updateAdminSettings(input)
-    ),
+    update: adminProcedure
+      .input(settingsInput)
+      .mutation(({ input }) => db.updateAdminSettings(input)),
+    sendMetaTestEvent: adminProcedure.mutation(async () => {
+      const settings = await db.getMetaServerSettings();
+      if (!settings.pixelId || !settings.capiToken || !settings.testEventCode) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Pixel ID, CAPI token, dan Test Event Code harus terpasang.",
+        });
+      }
+      return sendMetaEvent({
+        eventName: "ViewContent",
+        eventId: crypto.randomUUID(),
+        sourceUrl: "https://www.starthustler.com/admin/settings#meta",
+        customData: {
+          content_name: "STARTHUSTLER Meta CAPI Test",
+          content_ids: ["meta-capi-test"],
+          content_type: "product",
+          value: 0,
+          currency: "IDR",
+        },
+        useTestEventCode: true,
+      });
+    }),
   }),
   blogAdmin: router({
     list: adminProcedure.query(() => db.listAllBlogPosts()),
@@ -219,7 +294,11 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .query(async ({ input }) => {
         const post = await db.getBlogPostById(input.id);
-        if (!post) throw new TRPCError({ code: "NOT_FOUND", message: "Artikel tidak ditemukan" });
+        if (!post)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Artikel tidak ditemukan",
+          });
         return post;
       }),
     save: adminProcedure
@@ -236,7 +315,7 @@ export const appRouter = router({
         database: true,
         storage: Boolean(
           process.env.BUILT_IN_FORGE_API_URL &&
-            process.env.BUILT_IN_FORGE_API_KEY
+          process.env.BUILT_IN_FORGE_API_KEY
         ),
       };
     }),

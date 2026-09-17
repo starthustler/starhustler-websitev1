@@ -789,6 +789,46 @@ button { border:0; }
   font-size: 14px;
   font-weight: 700;
 }
+.admin-meta-events {
+  border-top: 1px solid #dfe5ef;
+  margin-top: 28px;
+  padding-top: 24px;
+}
+.admin-meta-events h3,
+.admin-meta-status h3 {
+  margin: 0 0 12px;
+}
+.admin-meta-events__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.admin-meta-status {
+  align-items: center;
+  background: #f5f8fd;
+  border-radius: 16px;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding: 20px;
+}
+.admin-meta-status p,
+.admin-meta-note {
+  color: #566275;
+  margin: 0;
+}
+.admin-meta-note {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 16px;
+}
+@media (max-width:720px) {
+  .admin-meta-status {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 .admin-upload {
   align-items: center;
   background: #edf3ff;

@@ -1,16 +1,35 @@
 // StarHustler style contract: action controls are generous rounded blue signals that work across the complete route system.
 import { ArrowRight, Play } from "lucide-react";
 
-export function PrimaryButton({ children, href = "/kelas", className = "", arrow = false }) {
+export function PrimaryButton({
+  children,
+  href = "/kelas",
+  className = "",
+  arrow = false,
+  onClick,
+  target,
+  rel,
+}) {
   return (
-    <a className={`button button--primary ${className}`} href={href}>
+    <a
+      className={`button button--primary ${className}`}
+      href={href}
+      onClick={onClick}
+      target={target}
+      rel={rel}
+    >
       <span>{children}</span>
       {arrow && <ArrowRight aria-hidden="true" size={17} strokeWidth={2.5} />}
     </a>
   );
 }
 
-export function SecondaryButton({ children, href = "/kelas", className = "", play = false }) {
+export function SecondaryButton({
+  children,
+  href = "/kelas",
+  className = "",
+  play = false,
+}) {
   return (
     <a className={`button button--secondary ${className}`} href={href}>
       {play && <Play aria-hidden="true" size={15} fill="currentColor" />}

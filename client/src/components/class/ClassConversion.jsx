@@ -22,7 +22,7 @@ function useCountdown(config) {
   return `${days ? `${days} hari ` : ""}${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function AnnouncementBar({ config, paymentUrl }) {
+export function AnnouncementBar({ config, paymentUrl, onPaymentClick }) {
   if (!config.enabled) return null;
   return (
     <aside
@@ -32,13 +32,20 @@ export function AnnouncementBar({ config, paymentUrl }) {
         {config.mainText} <strong>{config.highlightText}</strong>
       </span>
       {config.ctaLabel && (
-        <a href={config.ctaUrl || paymentUrl}>{config.ctaLabel}</a>
+        <a
+          href={config.ctaUrl || paymentUrl}
+          onClick={event =>
+            onPaymentClick?.(event, config.ctaUrl || paymentUrl)
+          }
+        >
+          {config.ctaLabel}
+        </a>
       )}
     </aside>
   );
 }
 
-export function FloatingCta({ config, countdown, paymentUrl }) {
+export function FloatingCta({ config, countdown, paymentUrl, onPaymentClick }) {
   const time = useCountdown(countdown);
   if (!config.enabled) return null;
   return (
@@ -64,6 +71,9 @@ export function FloatingCta({ config, countdown, paymentUrl }) {
         <a
           className="button button--primary"
           href={config.ctaUrl || paymentUrl}
+          onClick={event =>
+            onPaymentClick?.(event, config.ctaUrl || paymentUrl)
+          }
         >
           {config.ctaLabel}
         </a>
@@ -72,7 +82,12 @@ export function FloatingCta({ config, countdown, paymentUrl }) {
   );
 }
 
-export function FloatingNotification({ settings, paymentUrl, hasFloatingCta }) {
+export function FloatingNotification({
+  settings,
+  paymentUrl,
+  hasFloatingCta,
+  onPaymentClick,
+}) {
   const items = useMemo(
     () => settings.items.filter(item => item.active),
     [settings.items]
@@ -132,6 +147,9 @@ export function FloatingNotification({ settings, paymentUrl, hasFloatingCta }) {
       className={`class-floating-notification${visible ? " is-visible" : ""}${hasFloatingCta ? " has-floating-cta" : ""}`}
       role="status"
       aria-live="polite"
+      onClick={event =>
+        current.url === "payment" && onPaymentClick?.(event, paymentUrl)
+      }
     >
       <span className="class-floating-notification__icon">{current.icon}</span>
       <span>
