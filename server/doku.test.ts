@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDokuCheckoutBody,
+  createDokuRequestTimestamp,
   createDokuSignature,
   digestBody,
   normalizeDokuPhone,
@@ -9,6 +10,12 @@ import {
 } from "./integrations/doku.js";
 
 describe("DOKU signature", () => {
+  it("formats request timestamps exactly like DOKU's official Postman collection", () => {
+    expect(createDokuRequestTimestamp(new Date("2026-09-24T04:00:00.987Z"))).toBe(
+      "2026-09-24T04:00:00Z",
+    );
+  });
+
   it("creates deterministic HMAC signatures", () => {
     const body = JSON.stringify({ order: { invoice_number: "SH-TEST", amount: 200000 } });
     const signature = createDokuSignature({
@@ -78,6 +85,7 @@ describe("DOKU signature", () => {
     expect(payload).not.toHaveProperty("customer");
     expect(payload).not.toHaveProperty("additional_info");
   });
+
   it("parses DOKU expiry timestamps as Western Indonesian Time", () => {
     expect(parseDokuExpiry("20240712104711")?.toISOString()).toBe(
       "2024-07-12T03:47:11.000Z",
