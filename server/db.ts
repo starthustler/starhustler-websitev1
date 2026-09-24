@@ -883,7 +883,10 @@ export async function createClassOrder(input: {
 }) {
   const db = await requireClassDb();
   const publicId = crypto.randomUUID();
-  const invoiceNumber = `SH-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+  // Some DOKU Checkout channels reject symbols in invoice numbers. Keep the
+  // identifier short and strictly alphanumeric so one invoice works across
+  // every payment method enabled on the merchant account.
+  const invoiceNumber = `SH${Date.now().toString(36).toUpperCase()}${randomBytes(3).toString("hex").toUpperCase()}`;
   const rows = await db.insert(classOrders).values({
     publicId,
     invoiceNumber,
