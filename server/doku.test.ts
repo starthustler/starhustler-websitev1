@@ -52,7 +52,7 @@ describe("DOKU signature", () => {
     expect(verifyDokuNotification({ rawBody: `${rawBody} `, headers, secretKey: "secret-for-test-only" })).toBe(false);
   });
 
-  it("builds the Checkout payload using DOKU's payment object", () => {
+  it("builds DOKU's documented basic Checkout payload", () => {
     const payload = buildDokuCheckoutBody({
       settings: { paymentDueMinutes: 60 },
       invoiceNumber: "SH-TEST",
@@ -68,13 +68,16 @@ describe("DOKU signature", () => {
       publicAppUrl: "https://www.starthustler.com",
     });
 
-    expect(payload.payment).toEqual({ payment_due_date: 60 });
-    expect(payload.order).not.toHaveProperty("payment_due_date");
-    expect(payload.order.callback_url_result).toBe(
-      "https://www.starthustler.com/pembayaran/return-1",
-    );
+    expect(payload).toEqual({
+      order: {
+        amount: 200000,
+        invoice_number: "SH-TEST",
+      },
+      payment: { payment_due_date: 60 },
+    });
+    expect(payload).not.toHaveProperty("customer");
+    expect(payload).not.toHaveProperty("additional_info");
   });
-
   it("parses DOKU expiry timestamps as Western Indonesian Time", () => {
     expect(parseDokuExpiry("20240712104711")?.toISOString()).toBe(
       "2024-07-12T03:47:11.000Z",
