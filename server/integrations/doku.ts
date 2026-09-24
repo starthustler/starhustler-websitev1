@@ -71,36 +71,20 @@ export function buildDokuCheckoutBody(input: {
   customer: CheckoutCustomer;
   publicAppUrl: string;
 }) {
+  // Keep the Checkout request on DOKU's documented "Basic Request" shape.
+  // Customer data remains in StartHustler and the notification URL is
+  // configured in DOKU Back Office. Sending an override URL requires a
+  // matching pre-configured path and can make an otherwise valid request fail.
   return {
     order: {
       amount: input.amount,
       invoice_number: input.invoiceNumber,
-      currency: "IDR",
-      callback_url_result: `${input.publicAppUrl}/pembayaran/${input.returnId}`,
-      line_items: [
-        {
-          id: input.invoiceNumber,
-          name: input.className,
-          price: input.amount,
-          quantity: 1,
-        },
-      ],
     },
     payment: {
       payment_due_date: input.settings.paymentDueMinutes,
     },
-    customer: {
-      id: input.customer.id,
-      name: input.customer.name,
-      email: input.customer.email,
-      phone: normalizeDokuPhone(input.customer.phone),
-    },
-    additional_info: {
-      override_notification_url: `${input.publicAppUrl}/api/payments/doku/webhook`,
-    },
   };
 }
-
 export function parseDokuExpiry(value: unknown) {
   if (typeof value !== "string") return undefined;
   const match = value.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
