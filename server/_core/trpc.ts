@@ -27,6 +27,18 @@ const requireUser = t.middleware(async opts => {
 
 export const protectedProcedure = t.procedure.use(requireUser);
 
+export const studentProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    if (!opts.ctx.student) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Silakan masuk sebagai peserta.",
+      });
+    }
+    return opts.next({ ctx: { ...opts.ctx, student: opts.ctx.student } });
+  })
+);
+
 export const adminProcedure = t.procedure.use(
   t.middleware(async opts => {
     const { ctx, next } = opts;

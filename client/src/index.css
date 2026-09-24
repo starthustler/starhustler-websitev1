@@ -172,6 +172,56 @@ button { border:0; }
 @media (max-width:760px) { .class-detail-proof-grid { grid-template-columns:repeat(2,1fr); margin-top:36px; } .class-detail-proof-card { min-height:138px; padding:14px; } }
 @media (max-width:460px) { .class-detail-proof-grid { grid-template-columns:1fr; } }
 
+/* Registration, checkout status, and student portal */
+.registration-page { background:#f3f6fc; color:var(--navy); min-height:100vh; }
+.registration-shell,.student-portal-shell { margin:0 auto; max-width:1120px; padding:64px 28px 100px; }
+.registration-back { align-items:center; color:var(--blue); display:inline-flex; font-weight:800; gap:7px; margin-bottom:28px; }
+.registration-grid { align-items:start; display:grid; gap:54px; grid-template-columns:1fr minmax(360px,.82fr); }
+.registration-summary { padding:34px 0; }
+.registration-summary h1,.registration-card h1,.registration-card h2,.student-portal-head h1,.student-class-grid h2 { font-family:Poppins,sans-serif; letter-spacing:-1.4px; }
+.registration-summary h1 { font-size:clamp(38px,5vw,64px); line-height:1.03; margin:14px 0 22px; }
+.registration-summary > p { color:#4b5367; font-size:18px; line-height:1.6; white-space:pre-line; }
+.registration-price { border-bottom:1px solid #d9e1ef; border-top:1px solid #d9e1ef; display:flex; flex-direction:column; margin:30px 0; padding:22px 0; }
+.registration-price span { color:#64708b; font-size:14px; font-weight:700; }
+.registration-price strong { color:var(--blue); font-family:Poppins,sans-serif; font-size:38px; }
+.registration-trust { align-items:center; color:#315072; display:flex; gap:10px; margin-top:30px; }
+.registration-card { background:#fff; box-shadow:0 20px 60px rgba(11,19,48,.1); display:flex; flex-direction:column; gap:19px; padding:38px; }
+.registration-card h1,.registration-card h2 { font-size:30px; margin:6px 0; }
+.registration-card p { color:#59647c; line-height:1.55; margin:0; }
+.registration-card label { display:flex; flex-direction:column; gap:7px; text-align:left; }
+.registration-card label span { font-size:14px; font-weight:800; }
+.registration-card input { border:1px solid #cfd8e8; border-radius:8px; font:inherit; min-height:48px; padding:10px 13px; }
+.registration-card input:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(44,121,255,.13); outline:none; }
+.registration-card .button { justify-content:center; min-height:50px; width:100%; }
+.registration-card small { color:#7a8498; line-height:1.5; }
+.registration-error { background:#fff0f0; color:#a52222 !important; padding:12px; }
+.payment-status-shell { align-items:center; display:flex; justify-content:center; min-height:650px; padding:70px 20px; }
+.payment-status-card { max-width:590px; text-align:center; width:100%; }
+.payment-status-card label { text-align:left; }
+.status-paid { color:#20a55a; margin:auto; }.status-pending { color:var(--blue); margin:auto; }
+.student-portal-head { align-items:flex-end; display:flex; justify-content:space-between; margin-bottom:38px; }
+.student-portal-head h1 { font-size:48px; margin:8px 0; }
+.student-login { margin:30px auto; max-width:480px; }
+.student-class-grid { display:grid; gap:22px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.student-class-grid article { background:#fff; box-shadow:0 16px 42px rgba(11,19,48,.08); padding:32px; }
+.student-class-grid h2 { font-size:27px; margin:9px 0 15px; }
+.student-class-grid p { color:#59647c; line-height:1.55; white-space:pre-line; }
+.order-status { border-radius:99px; display:inline-block; font-size:12px; font-weight:800; padding:6px 10px; text-transform:uppercase; }
+.order-status--paid { background:#e4f8ec; color:#12733e; }.order-status--pending_payment { background:#fff3d7; color:#875a00; }
+.admin-inline-action { background:none; border:0; color:var(--blue); cursor:pointer; display:block; font:inherit; font-size:12px; font-weight:800; margin-top:8px; padding:0; text-align:left; }
+@media (max-width:760px) {
+  .registration-shell,.student-portal-shell { padding:38px 18px 72px; }
+  .registration-grid { display:flex; flex-direction:column; gap:25px; }
+  .registration-summary { padding:10px 4px; text-align:center; }
+  .registration-summary h1 { font-size:38px; }
+  .registration-summary > p { font-size:16px; }
+  .registration-price { align-items:center; }.registration-trust { justify-content:center; }
+  .registration-card { padding:28px 22px; width:100%; }
+  .payment-status-shell { min-height:560px; padding:40px 16px; }
+  .student-portal-head { align-items:flex-start; flex-direction:column; gap:16px; }
+  .student-portal-head h1 { font-size:38px; }.student-class-grid { grid-template-columns:1fr; }
+}
+
 /* Managed class conversion components */
 .class-announcement {
   align-items: center;

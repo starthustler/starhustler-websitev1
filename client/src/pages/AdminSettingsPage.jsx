@@ -14,6 +14,7 @@ const defaultEvents = {
 export default function AdminSettingsPage() {
   const utils = trpc.useUtils();
   const query = trpc.settingsAdmin.get.useQuery(undefined, { retry: false });
+  const commerceQuery = trpc.commerceAdmin.get.useQuery(undefined, { retry: false });
   const [form, setForm] = useState({
     paymentProvider: "DOKU",
     paymentUrl: "",
@@ -25,6 +26,21 @@ export default function AdminSettingsPage() {
     metaEvents: defaultEvents,
   });
   const [message, setMessage] = useState("");
+  const [commerce, setCommerce] = useState({
+    checkoutMode: "payment_link",
+    dokuEnvironment: "sandbox",
+    dokuClientId: "",
+    dokuSecretKey: "",
+    clearDokuClientId: false,
+    clearDokuSecretKey: false,
+    dokuPaymentDueMinutes: 60,
+    resendApiKey: "",
+    clearResendApiKey: false,
+    resendFromName: "Kelas StartHustler",
+    resendFromEmail: "kelas@mail.starthustler.com",
+    resendReplyTo: "",
+  });
+  const [resendTestTo, setResendTestTo] = useState("");
 
   useEffect(() => {
     if (query.data)
@@ -34,6 +50,15 @@ export default function AdminSettingsPage() {
         metaEvents: query.data.metaEvents || defaultEvents,
       }));
   }, [query.data]);
+  useEffect(() => {
+    if (commerceQuery.data) setCommerce(current => ({
+      ...current,
+      ...commerceQuery.data,
+      dokuClientId: "",
+      dokuSecretKey: "",
+      resendApiKey: "",
+    }));
+  }, [commerceQuery.data]);
 
   const save = trpc.settingsAdmin.update.useMutation({
     onSuccess: async data => {
@@ -61,6 +86,26 @@ export default function AdminSettingsPage() {
     },
     onError: error => setMessage(error.message),
   });
+  const saveCommerce = trpc.commerceAdmin.update.useMutation({
+    onSuccess: data => {
+      setCommerce(current => ({
+        ...current,
+        ...data,
+        dokuClientId: "",
+        dokuSecretKey: "",
+        resendApiKey: "",
+        clearDokuClientId: false,
+        clearDokuSecretKey: false,
+        clearResendApiKey: false,
+      }));
+      setMessage("Pengaturan pembayaran dan email tersimpan.");
+    },
+    onError: error => setMessage(error.message),
+  });
+  const sendEmailTest = trpc.commerceAdmin.sendResendTest.useMutation({
+    onSuccess: () => setMessage("Test email berhasil dikirim."),
+    onError: error => setMessage(error.message),
+  });
   const field = (key, label, type = "text", placeholder = "") => (
     <label className="admin-field">
       <span>{label}</span>
@@ -79,6 +124,20 @@ export default function AdminSettingsPage() {
     initiateCheckout: "InitiateCheckout",
     purchase: "Purchase",
   };
+  const commerceField = (key, label, type = "text", placeholder = "") => (
+    <label className="admin-field">
+      <span>{label}</span>
+      <input
+        type={type}
+        value={commerce[key] || ""}
+        placeholder={placeholder}
+        onChange={event => setCommerce({
+          ...commerce,
+          [key]: type === "number" ? Number(event.target.value) : event.target.value,
+        })}
+      />
+    </label>
+  );
   const last = query.data?.metaLastServerEvent;
 
   return (
@@ -87,6 +146,7 @@ export default function AdminSettingsPage() {
         onSubmit={event => {
           event.preventDefault();
           save.mutate(form);
+          saveCommerce.mutate(commerce);
         }}
       >
         <div className="admin-title-row">
@@ -106,7 +166,7 @@ export default function AdminSettingsPage() {
               </p>
             )}
           </div>
-          <button className="button button--primary" disabled={save.isPending}>
+          <button className="button button--primary" disabled={save.isPending || saveCommerce.isPending}>
             <Save size={16} /> Simpan
           </button>
         </div>
@@ -123,6 +183,39 @@ export default function AdminSettingsPage() {
               "url",
               "https://pay.doku.com/..."
             )}
+            <label className="admin-field">
+              <span>Checkout Mode</span>
+              <select value={commerce.checkoutMode} onChange={event => setCommerce({ ...commerce, checkoutMode: event.target.value })}>
+                <option value="payment_link">Payment Link Lama</option>
+                <option value="integrated">DOKU Checkout Terintegrasi</option>
+              </select>
+            </label>
+            <label className="admin-field">
+              <span>DOKU Environment</span>
+              <select value={commerce.dokuEnvironment} onChange={event => setCommerce({ ...commerce, dokuEnvironment: event.target.value })}>
+                <option value="sandbox">Sandbox</option>
+                <option value="production">Production</option>
+              </select>
+            </label>
+            {commerceField("dokuClientId", commerceQuery.data?.dokuClientIdConfigured ? "Ganti DOKU Client ID (opsional)" : "DOKU Client ID", "password")}
+            {commerceField("dokuSecretKey", commerceQuery.data?.dokuSecretKeyConfigured ? "Ganti DOKU Secret Key (opsional)" : "DOKU Secret Key", "password")}
+            {commerceField("dokuPaymentDueMinutes", "Payment Due (menit)", "number")}
+            <div className="admin-field"><span>Status DOKU</span><p>Client ID: <strong>{commerceQuery.data?.dokuClientIdConfigured ? "Terpasang" : "Belum"}</strong></p><p>Secret: <strong>{commerceQuery.data?.dokuSecretKeyConfigured ? "Terpasang" : "Belum"}</strong></p><p>Webhook: <code>/api/payments/doku/webhook</code></p></div>
+            <label className="admin-toggle"><input type="checkbox" checked={commerce.clearDokuClientId} onChange={e => setCommerce({ ...commerce, clearDokuClientId: e.target.checked })} /><span>Hapus Client ID tersimpan</span></label>
+            <label className="admin-toggle"><input type="checkbox" checked={commerce.clearDokuSecretKey} onChange={e => setCommerce({ ...commerce, clearDokuSecretKey: e.target.checked })} /><span>Hapus Secret Key tersimpan</span></label>
+          </div>
+        </section>
+        <section className="admin-panel" id="email">
+          <div className="admin-panel__heading"><h2>Email Transaksional</h2><p>Resend mengirim link pembayaran dan akses kelas setelah webhook DOKU terverifikasi.</p></div>
+          <div className="admin-form-grid">
+            {commerceField("resendApiKey", commerceQuery.data?.resendApiKeyConfigured ? "Ganti Resend API Key (opsional)" : "Resend API Key", "password")}
+            {commerceField("resendFromName", "From Name")}
+            {commerceField("resendFromEmail", "From Email", "email")}
+            {commerceField("resendReplyTo", "Reply-To", "email")}
+            <label className="admin-toggle"><input type="checkbox" checked={commerce.clearResendApiKey} onChange={e => setCommerce({ ...commerce, clearResendApiKey: e.target.checked })} /><span>Hapus Resend API Key tersimpan</span></label>
+            <div className="admin-field"><span>Status Resend</span><p><strong>{commerceQuery.data?.resendApiKeyConfigured ? "API key terpasang" : "Belum dikonfigurasi"}</strong></p></div>
+            <label className="admin-field"><span>Kirim test ke</span><input type="email" value={resendTestTo} onChange={e => setResendTestTo(e.target.value)} placeholder="email@contoh.com" /></label>
+            <div className="admin-field"><span>&nbsp;</span><button type="button" className="button button--secondary" disabled={!resendTestTo || sendEmailTest.isPending} onClick={() => sendEmailTest.mutate({ to: resendTestTo })}><Send size={16} /> Kirim Test Email</button></div>
           </div>
         </section>
         <section className="admin-panel" id="meta">

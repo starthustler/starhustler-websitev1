@@ -59,6 +59,14 @@ export type ClassContent = {
     useGlobalPaymentUrl: boolean;
     paymentUrl: string;
   };
+  registration: {
+    enabled: boolean;
+    meetingProvider: "zoom" | "google_meet" | "other";
+    meetingUrl: string;
+    meetingLabel: string;
+    sessionDateTime: string;
+    timezone: string;
+  };
   intro: {
     lead: string;
     firstTitle: string;
@@ -220,6 +228,14 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
       "Kelas online Rp150.000 + ebook Memulai Solopreneur Rp150.000.",
     useGlobalPaymentUrl: true,
     paymentUrl: DEFAULT_PAYMENT_URL,
+  },
+  registration: {
+    enabled: true,
+    meetingProvider: "zoom",
+    meetingUrl: "",
+    meetingLabel: "Live via Zoom",
+    sessionDateTime: "2026-08-28T19:00:00+07:00",
+    timezone: "Asia/Jakarta",
   },
   intro: {
     lead: "Selama dua jam, kamu akan diajak melihat cara seorang solopreneur menemukan peluang dari masalah sehari hari, mengubahnya menjadi ide aplikasi, lalu mulai membangunnya dengan bantuan AI.",
@@ -502,6 +518,12 @@ function createCatalogueClass(
     bundlingLabel: name,
     supportingText: "Detail harga, jadwal, dan benefit dapat diperbarui melalui Admin Panel.",
   };
+  content.registration = {
+    ...content.registration,
+    enabled: false,
+    meetingUrl: "",
+    sessionDateTime: "",
+  };
   content.mentor = {
     ...content.mentor,
     name: instructor,
@@ -576,6 +598,10 @@ export function normalizeClassContent(
     hero: { ...DEFAULT_CLASS_CONTENT.hero, ...input.hero },
     video: { ...DEFAULT_CLASS_CONTENT.video, ...input.video },
     pricing: { ...DEFAULT_CLASS_CONTENT.pricing, ...input.pricing },
+    registration: {
+      ...DEFAULT_CLASS_CONTENT.registration,
+      ...input.registration,
+    },
     intro: { ...DEFAULT_CLASS_CONTENT.intro, ...input.intro },
     story: { ...DEFAULT_CLASS_CONTENT.story, ...input.story },
     calculation: { ...DEFAULT_CLASS_CONTENT.calculation, ...input.calculation },

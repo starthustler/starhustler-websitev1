@@ -11,12 +11,22 @@ import {
   verifyPassword,
 } from "./_core/localAuth.js";
 import { systemRouter } from "./_core/systemRouter.js";
-import { adminProcedure, publicProcedure, router } from "./_core/trpc.js";
+import { adminProcedure, publicProcedure, router, studentProcedure } from "./_core/trpc.js";
 import { storagePut } from "./storage.js";
 import * as db from "./db.js";
 import { sendMetaEvent, type MetaEventName } from "./metaTracking.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import {
+  createRegistrationCheckout,
+  getPublicOrderStatus,
+  resendEnrollmentConfirmation,
+  sendResendTest,
+} from "./commerce.js";
+import {
+  clearStudentLoginSession,
+  createStudentLoginSession,
+} from "./_core/studentAuth.js";
 
 const slugSchema = z
   .string()
@@ -66,6 +76,26 @@ const blogInput = z.object({
   imageUrl: z.string().trim().max(2000),
   content: z.string().trim().min(2).max(100000),
   status: z.enum(["draft", "published"]),
+});
+const commerceSettingsInput = z.object({
+  checkoutMode: z.enum(["payment_link", "integrated"]),
+  dokuEnvironment: z.enum(["sandbox", "production"]),
+  dokuClientId: z.string().trim().max(500).optional(),
+  dokuSecretKey: z.string().trim().max(1000).optional(),
+  clearDokuClientId: z.boolean().optional(),
+  clearDokuSecretKey: z.boolean().optional(),
+  dokuPaymentDueMinutes: z.number().int().min(15).max(1440),
+  resendApiKey: z.string().trim().max(1000).optional(),
+  clearResendApiKey: z.boolean().optional(),
+  resendFromName: z.string().trim().min(2).max(120),
+  resendFromEmail: z.string().trim().email().max(320),
+  resendReplyTo: z.union([z.literal(""), z.string().trim().email().max(320)]),
+});
+const registrationInput = z.object({
+  slug: slugSchema,
+  name: z.string().trim().min(2).max(160),
+  email: z.string().trim().email().max(320),
+  phone: z.string().trim().min(8).max(32).regex(/^\+?[0-9 ()-]+$/),
 });
 
 const notFound = () =>
@@ -198,6 +228,7 @@ export const appRouter = router({
         return {
           paymentProvider: "DOKU",
           paymentUrl: DEFAULT_CLASS_CONTENT.pricing.paymentUrl,
+          checkoutMode: "payment_link" as const,
           metaPixelId: "",
           metaEvents: {
             pageView: true,
@@ -208,6 +239,79 @@ export const appRouter = router({
           },
         };
       }
+    }),
+  }),
+  checkout: router({
+    create: publicProcedure.input(registrationInput).mutation(async ({ input }) => {
+      try {
+        return await createRegistrationCheckout(input);
+      } catch (error) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: error instanceof Error ? error.message : "Checkout tidak dapat dibuat.",
+        });
+      }
+    }),
+    status: publicProcedure
+      .input(z.object({ orderId: z.string().uuid() }))
+      .query(async ({ input }) => {
+        const status = await getPublicOrderStatus(input.orderId);
+        if (!status) throw new TRPCError({ code: "NOT_FOUND", message: "Transaksi tidak ditemukan." });
+        return status;
+      }),
+  }),
+  studentAuth: router({
+    activationInfo: publicProcedure
+      .input(z.object({ token: z.string().min(32).max(200) }))
+      .query(async ({ input }) => {
+        const record = await db.getValidPasswordSetupToken(input.token);
+        if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Tautan aktivasi tidak valid atau kedaluwarsa." });
+        const [local, domain] = record.student.email.split("@");
+        return {
+          name: record.student.name,
+          emailMasked: `${local.slice(0, 2)}***@${domain}`,
+        };
+      }),
+    activate: publicProcedure
+      .input(z.object({ token: z.string().min(32).max(200), password: z.string().min(12).max(128) }))
+      .mutation(async ({ input, ctx }) => {
+        const student = await db.activateStudentPassword(input.token, await hashPassword(input.password));
+        if (!student) throw new TRPCError({ code: "BAD_REQUEST", message: "Tautan aktivasi tidak valid atau sudah digunakan." });
+        await createStudentLoginSession(ctx.req, ctx.res, student.id);
+        return { name: student.name, email: student.email };
+      }),
+    login: publicProcedure
+      .input(z.object({ email: z.string().email().max(320), password: z.string().min(1).max(128) }))
+      .mutation(async ({ input, ctx }) => {
+        const student = await db.getStudentByEmail(input.email);
+        const valid = Boolean(student?.passwordHash && await verifyPassword(input.password, student.passwordHash));
+        if (!student || !valid) {
+          await new Promise(resolve => setTimeout(resolve, 350));
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "Email atau password salah." });
+        }
+        await createStudentLoginSession(ctx.req, ctx.res, student.id);
+        return { name: student.name, email: student.email };
+      }),
+    me: publicProcedure.query(({ ctx }) => ctx.student ? {
+      name: ctx.student.name,
+      email: ctx.student.email,
+    } : null),
+    logout: publicProcedure.mutation(async ({ ctx }) => {
+      await clearStudentLoginSession(ctx.req, ctx.res);
+      return { success: true } as const;
+    }),
+  }),
+  student: router({
+    classes: studentProcedure.query(async ({ ctx }) => {
+      const rows = await db.listStudentEnrollments(ctx.student.id);
+      return rows.map(row => ({
+        id: row.id,
+        className: row.className,
+        slug: row.slug,
+        schedule: row.content.hero.scheduleText,
+        meetingLabel: row.content.registration.meetingLabel,
+        meetingUrl: row.content.registration.meetingUrl,
+      }));
     }),
   }),
   tracking: router({
@@ -287,6 +391,17 @@ export const appRouter = router({
         useTestEventCode: true,
       });
     }),
+  }),
+  commerceAdmin: router({
+    get: adminProcedure.query(() => db.getCommerceAdminSettings()),
+    update: adminProcedure.input(commerceSettingsInput).mutation(({ input }) => db.updateCommerceSettings(input)),
+    sendResendTest: adminProcedure
+      .input(z.object({ to: z.string().email().max(320) }))
+      .mutation(({ input }) => sendResendTest(input.to)),
+    orders: adminProcedure.query(() => db.listOrdersForAdmin()),
+    resendEnrollmentEmail: adminProcedure
+      .input(z.object({ orderId: z.string().uuid() }))
+      .mutation(({ input }) => resendEnrollmentConfirmation(input.orderId)),
   }),
   blogAdmin: router({
     list: adminProcedure.query(() => db.listAllBlogPosts()),

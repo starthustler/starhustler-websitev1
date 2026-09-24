@@ -1,14 +1,21 @@
-import { and, desc, eq, gt, isNotNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
   adminSessions,
   blogPosts,
+  classEnrollments,
+  classOrders,
   classes,
+  emailDeliveries,
+  passwordSetupTokens,
+  paymentEvents,
   type InsertClass,
   type InsertUser,
   type User,
   siteSettings,
+  studentSessions,
+  students,
   users,
 } from "../drizzle/schema.js";
 import {
@@ -20,6 +27,8 @@ import {
   type PublishStatus,
 } from "../shared/classContent.js";
 import { ENV } from "./_core/env.js";
+import { decryptSecret, encryptSecret } from "./integrations/secrets.js";
+import { createHash, randomBytes } from "node:crypto";
 
 let dbClient: ReturnType<typeof postgres> | null = null;
 let database: ReturnType<typeof drizzle> | null = null;
@@ -67,6 +76,55 @@ export async function ensureClassCmsSchema(): Promise<void> {
       )
     `)
     );
+    await db.execute(sql.raw(`
+      CREATE TABLE IF NOT EXISTS "students" (
+        "id" serial PRIMARY KEY, "name" varchar(160) NOT NULL,
+        "email" varchar(320) NOT NULL UNIQUE, "phone" varchar(32) NOT NULL,
+        "passwordHash" text, "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS "class_orders" (
+        "id" serial PRIMARY KEY, "publicId" varchar(36) NOT NULL UNIQUE,
+        "invoiceNumber" varchar(64) NOT NULL UNIQUE, "classId" integer NOT NULL,
+        "studentId" integer NOT NULL, "amount" integer NOT NULL,
+        "currency" varchar(3) NOT NULL DEFAULT 'IDR',
+        "status" varchar(24) NOT NULL DEFAULT 'pending_payment',
+        "paymentUrl" text, "paymentToken" text, "expiresAt" timestamptz,
+        "paidAt" timestamptz, "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS "class_orders_student_idx" ON "class_orders" ("studentId");
+      CREATE INDEX IF NOT EXISTS "class_orders_class_idx" ON "class_orders" ("classId");
+      CREATE INDEX IF NOT EXISTS "class_orders_status_idx" ON "class_orders" ("status");
+      CREATE TABLE IF NOT EXISTS "class_enrollments" (
+        "id" serial PRIMARY KEY, "classId" integer NOT NULL, "studentId" integer NOT NULL,
+        "orderId" integer NOT NULL, "status" varchar(24) NOT NULL DEFAULT 'active',
+        "createdAt" timestamptz NOT NULL DEFAULT now(), "updatedAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS "class_enrollments_student_class_idx" ON "class_enrollments" ("studentId", "classId");
+      CREATE TABLE IF NOT EXISTS "payment_events" (
+        "id" serial PRIMARY KEY, "eventKey" varchar(128) NOT NULL UNIQUE,
+        "orderId" integer, "status" varchar(32) NOT NULL, "payload" text NOT NULL,
+        "receivedAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE TABLE IF NOT EXISTS "password_setup_tokens" (
+        "tokenHash" varchar(64) PRIMARY KEY, "studentId" integer NOT NULL,
+        "createdAt" timestamptz NOT NULL DEFAULT now(), "expiresAt" timestamptz NOT NULL,
+        "usedAt" timestamptz
+      );
+      CREATE TABLE IF NOT EXISTS "student_sessions" (
+        "tokenHash" varchar(64) PRIMARY KEY, "studentId" integer NOT NULL,
+        "createdAt" timestamptz NOT NULL DEFAULT now(), "expiresAt" timestamptz NOT NULL
+      );
+      CREATE TABLE IF NOT EXISTS "email_deliveries" (
+        "id" serial PRIMARY KEY, "orderId" integer NOT NULL, "kind" varchar(32) NOT NULL,
+        "recipient" varchar(320) NOT NULL, "status" varchar(24) NOT NULL DEFAULT 'pending',
+        "providerMessageId" varchar(160), "lastError" text, "attempts" integer NOT NULL DEFAULT 0,
+        "sentAt" timestamptz, "createdAt" timestamptz NOT NULL DEFAULT now(),
+        "updatedAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS "email_deliveries_order_kind_idx" ON "email_deliveries" ("orderId", "kind");
+    `));
     await db.execute(
       sql.raw(`
       CREATE TABLE IF NOT EXISTS "site_settings" (
@@ -162,6 +220,15 @@ export async function ensureClassCmsSchema(): Promise<void> {
         { key: "meta_event_lead", value: "true" },
         { key: "meta_event_initiate_checkout", value: "true" },
         { key: "meta_event_purchase", value: "true" },
+        { key: "checkout_mode", value: "payment_link" },
+        { key: "doku_environment", value: "sandbox" },
+        { key: "doku_client_id", value: "" },
+        { key: "doku_secret_key", value: "" },
+        { key: "doku_payment_due_minutes", value: "60" },
+        { key: "resend_api_key", value: "" },
+        { key: "resend_from_name", value: "Kelas StartHustler" },
+        { key: "resend_from_email", value: "kelas@mail.starthustler.com" },
+        { key: "resend_reply_to", value: "" },
       ])
       .onConflictDoNothing({ target: siteSettings.key });
 
@@ -506,6 +573,7 @@ export async function getPublicSettings() {
   return {
     paymentProvider: values.payment_provider || "DOKU",
     paymentUrl: values.payment_url || DEFAULT_PAYMENT_URL,
+    checkoutMode: values.checkout_mode === "integrated" ? "integrated" : "payment_link",
     metaPixelId: values.meta_pixel_id || "",
     metaEvents: {
       pageView: values.meta_event_page_view !== "false",
@@ -704,4 +772,307 @@ export async function saveBlogPost(id: number | null, input: BlogPostInput) {
     .values(values)
     .returning({ id: blogPosts.id });
   return rows[0] ? getBlogPostById(rows[0].id) : undefined;
+}
+
+async function settingsMap() {
+  const db = await requireClassDb();
+  const rows = await db.select().from(siteSettings);
+  return Object.fromEntries(rows.map(row => [row.key, row.value]));
+}
+
+export async function getCommerceSettings() {
+  const values = await settingsMap();
+  const environment =
+    (process.env.DOKU_ENVIRONMENT || values.doku_environment) === "production"
+      ? ("production" as const)
+      : ("sandbox" as const);
+  return {
+    checkoutMode: values.checkout_mode === "integrated" ? "integrated" : "payment_link",
+    doku: {
+      environment,
+      clientId: process.env.DOKU_CLIENT_ID || decryptSecret(values.doku_client_id),
+      secretKey: process.env.DOKU_SECRET_KEY || decryptSecret(values.doku_secret_key),
+      paymentDueMinutes: Math.min(1440, Math.max(15, Number(values.doku_payment_due_minutes) || 60)),
+    },
+    resend: {
+      apiKey: process.env.RESEND_API_KEY || decryptSecret(values.resend_api_key),
+      fromName: values.resend_from_name || "Kelas StartHustler",
+      fromEmail: values.resend_from_email || "kelas@mail.starthustler.com",
+      replyTo: values.resend_reply_to || "",
+    },
+  };
+}
+
+export async function getCommerceAdminSettings() {
+  const settings = await getCommerceSettings();
+  return {
+    checkoutMode: settings.checkoutMode,
+    dokuEnvironment: settings.doku.environment,
+    dokuClientIdConfigured: Boolean(settings.doku.clientId),
+    dokuSecretKeyConfigured: Boolean(settings.doku.secretKey),
+    dokuPaymentDueMinutes: settings.doku.paymentDueMinutes,
+    resendApiKeyConfigured: Boolean(settings.resend.apiKey),
+    resendFromName: settings.resend.fromName,
+    resendFromEmail: settings.resend.fromEmail,
+    resendReplyTo: settings.resend.replyTo,
+  };
+}
+
+export async function updateCommerceSettings(input: {
+  checkoutMode: "payment_link" | "integrated";
+  dokuEnvironment: "sandbox" | "production";
+  dokuClientId?: string;
+  dokuSecretKey?: string;
+  clearDokuClientId?: boolean;
+  clearDokuSecretKey?: boolean;
+  dokuPaymentDueMinutes: number;
+  resendApiKey?: string;
+  clearResendApiKey?: boolean;
+  resendFromName: string;
+  resendFromEmail: string;
+  resendReplyTo: string;
+}) {
+  const db = await requireClassDb();
+  const values: Record<string, string> = {
+    checkout_mode: input.checkoutMode,
+    doku_environment: input.dokuEnvironment,
+    doku_payment_due_minutes: String(input.dokuPaymentDueMinutes),
+    resend_from_name: input.resendFromName,
+    resend_from_email: input.resendFromEmail,
+    resend_reply_to: input.resendReplyTo,
+  };
+  if (input.clearDokuClientId) values.doku_client_id = "";
+  else if (input.dokuClientId) values.doku_client_id = encryptSecret(input.dokuClientId);
+  if (input.clearDokuSecretKey) values.doku_secret_key = "";
+  else if (input.dokuSecretKey) values.doku_secret_key = encryptSecret(input.dokuSecretKey);
+  if (input.clearResendApiKey) values.resend_api_key = "";
+  else if (input.resendApiKey) values.resend_api_key = encryptSecret(input.resendApiKey);
+  await Promise.all(Object.entries(values).map(([key, value]) =>
+    db.insert(siteSettings).values({ key, value, updatedAt: new Date() }).onConflictDoUpdate({
+      target: siteSettings.key,
+      set: { value, updatedAt: new Date() },
+    })
+  ));
+  return getCommerceAdminSettings();
+}
+
+export async function upsertStudent(input: { name: string; email: string; phone: string }) {
+  const db = await requireClassDb();
+  const email = input.email.trim().toLowerCase();
+  const rows = await db.insert(students).values({ ...input, email }).onConflictDoUpdate({
+    target: students.email,
+    set: { name: input.name, phone: input.phone, updatedAt: new Date() },
+  }).returning();
+  return rows[0];
+}
+
+export async function createClassOrder(input: {
+  classId: number;
+  studentId: number;
+  amount: number;
+}) {
+  const db = await requireClassDb();
+  const publicId = crypto.randomUUID();
+  const invoiceNumber = `SH-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+  const rows = await db.insert(classOrders).values({
+    publicId,
+    invoiceNumber,
+    classId: input.classId,
+    studentId: input.studentId,
+    amount: input.amount,
+  }).returning();
+  return rows[0];
+}
+
+export async function setOrderCheckout(orderId: number, input: {
+  paymentUrl: string;
+  paymentToken: string;
+  expiresAt: Date;
+}) {
+  const db = await requireClassDb();
+  await db.update(classOrders).set({ ...input, updatedAt: new Date() }).where(eq(classOrders.id, orderId));
+}
+
+export async function getOrderDetailsByPublicId(publicId: string) {
+  const db = await requireClassDb();
+  const rows = await db.select({ order: classOrders, student: students, classRow: classes })
+    .from(classOrders)
+    .innerJoin(students, eq(classOrders.studentId, students.id))
+    .innerJoin(classes, eq(classOrders.classId, classes.id))
+    .where(eq(classOrders.publicId, publicId)).limit(1);
+  return rows[0];
+}
+
+export async function getOrderDetailsByInvoice(invoiceNumber: string) {
+  const db = await requireClassDb();
+  const rows = await db.select({ order: classOrders, student: students, classRow: classes })
+    .from(classOrders)
+    .innerJoin(students, eq(classOrders.studentId, students.id))
+    .innerJoin(classes, eq(classOrders.classId, classes.id))
+    .where(eq(classOrders.invoiceNumber, invoiceNumber)).limit(1);
+  return rows[0];
+}
+
+export async function recordPaymentAndActivate(input: {
+  eventKey: string;
+  invoiceNumber: string;
+  status: string;
+  payload: string;
+}) {
+  const db = await requireClassDb();
+  const detail = await getOrderDetailsByInvoice(input.invoiceNumber);
+  if (!detail) return { kind: "unknown_order" as const };
+  const existing = await db.select({ id: paymentEvents.id }).from(paymentEvents)
+    .where(eq(paymentEvents.eventKey, input.eventKey)).limit(1);
+  if (existing[0]) return { kind: "duplicate" as const, detail };
+  const success = ["SUCCESS", "COMPLETED", "PAID"].includes(input.status.toUpperCase());
+  let setupToken = "";
+  await db.transaction(async tx => {
+    await tx.insert(paymentEvents).values({
+      eventKey: input.eventKey,
+      orderId: detail.order.id,
+      status: input.status,
+      payload: input.payload,
+    }).onConflictDoNothing({ target: paymentEvents.eventKey });
+    if (!success || detail.order.status === "paid") return;
+    await tx.update(classOrders).set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+      .where(eq(classOrders.id, detail.order.id));
+    await tx.insert(classEnrollments).values({
+      classId: detail.order.classId,
+      studentId: detail.order.studentId,
+      orderId: detail.order.id,
+      status: "active",
+    }).onConflictDoUpdate({
+      target: [classEnrollments.studentId, classEnrollments.classId],
+      set: { orderId: detail.order.id, status: "active", updatedAt: new Date() },
+    });
+    setupToken = randomBytes(32).toString("base64url");
+    const tokenHash = createHash("sha256").update(setupToken).digest("hex");
+    await tx.insert(passwordSetupTokens).values({
+      tokenHash,
+      studentId: detail.order.studentId,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    });
+  });
+  return { kind: success ? "paid" as const : "updated" as const, detail, setupToken };
+}
+
+export async function getValidPasswordSetupToken(token: string) {
+  const db = await requireClassDb();
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const rows = await db.select({ token: passwordSetupTokens, student: students })
+    .from(passwordSetupTokens)
+    .innerJoin(students, eq(passwordSetupTokens.studentId, students.id))
+    .where(and(
+      eq(passwordSetupTokens.tokenHash, tokenHash),
+      gt(passwordSetupTokens.expiresAt, new Date()),
+      isNull(passwordSetupTokens.usedAt)
+    )).limit(1);
+  return rows[0];
+}
+
+export async function createPasswordSetupToken(studentId: number) {
+  const db = await requireClassDb();
+  const token = randomBytes(32).toString("base64url");
+  await db.insert(passwordSetupTokens).values({
+    tokenHash: createHash("sha256").update(token).digest("hex"),
+    studentId,
+    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+  });
+  return token;
+}
+
+export async function activateStudentPassword(token: string, passwordHash: string) {
+  const db = await requireClassDb();
+  const record = await getValidPasswordSetupToken(token);
+  if (!record) return undefined;
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  await db.transaction(async tx => {
+    await tx.update(students).set({ passwordHash, updatedAt: new Date() }).where(eq(students.id, record.student.id));
+    await tx.update(passwordSetupTokens).set({ usedAt: new Date() }).where(eq(passwordSetupTokens.tokenHash, tokenHash));
+  });
+  return record.student;
+}
+
+export async function getStudentByEmail(email: string) {
+  const db = await requireClassDb();
+  const rows = await db.select().from(students).where(eq(students.email, email.trim().toLowerCase())).limit(1);
+  return rows[0];
+}
+
+export async function createStudentSession(input: { tokenHash: string; studentId: number; expiresAt: Date }) {
+  const db = await requireClassDb();
+  await db.delete(studentSessions).where(lt(studentSessions.expiresAt, new Date()));
+  await db.insert(studentSessions).values(input);
+}
+
+export async function getStudentBySessionHash(tokenHash: string) {
+  const db = await requireClassDb();
+  const rows = await db.select({ student: students }).from(studentSessions)
+    .innerJoin(students, eq(studentSessions.studentId, students.id))
+    .where(and(eq(studentSessions.tokenHash, tokenHash), gt(studentSessions.expiresAt, new Date()))).limit(1);
+  return rows[0]?.student;
+}
+
+export async function deleteStudentSession(tokenHash: string) {
+  const db = await requireClassDb();
+  await db.delete(studentSessions).where(eq(studentSessions.tokenHash, tokenHash));
+}
+
+export async function listStudentEnrollments(studentId: number) {
+  const db = await requireClassDb();
+  const rows = await db.select({ enrollment: classEnrollments, classRow: classes })
+    .from(classEnrollments)
+    .innerJoin(classes, eq(classEnrollments.classId, classes.id))
+    .where(and(eq(classEnrollments.studentId, studentId), eq(classEnrollments.status, "active")))
+    .orderBy(desc(classEnrollments.createdAt));
+  return rows.map(row => ({
+    id: row.enrollment.id,
+    classId: row.classRow.id,
+    className: row.classRow.name,
+    slug: row.classRow.slug,
+    content: parseContent(row.classRow.contentJson),
+  }));
+}
+
+export async function upsertEmailDelivery(input: {
+  orderId: number;
+  kind: string;
+  recipient: string;
+  status: string;
+  providerMessageId?: string;
+  lastError?: string;
+}) {
+  const db = await requireClassDb();
+  const values = {
+    ...input,
+    attempts: 1,
+    sentAt: input.status === "sent" ? new Date() : null,
+    updatedAt: new Date(),
+  };
+  await db.insert(emailDeliveries).values(values).onConflictDoUpdate({
+    target: [emailDeliveries.orderId, emailDeliveries.kind],
+    set: {
+      status: input.status,
+      providerMessageId: input.providerMessageId || null,
+      lastError: input.lastError || null,
+      attempts: sql`${emailDeliveries.attempts} + 1`,
+      sentAt: input.status === "sent" ? new Date() : null,
+      updatedAt: new Date(),
+    },
+  });
+}
+
+export async function listOrdersForAdmin() {
+  const db = await requireClassDb();
+  const rows = await db.select({ order: classOrders, student: students, classRow: classes })
+    .from(classOrders)
+    .innerJoin(students, eq(classOrders.studentId, students.id))
+    .innerJoin(classes, eq(classOrders.classId, classes.id))
+    .orderBy(desc(classOrders.createdAt));
+  return rows.map(({ order, student, classRow }) => ({
+    ...order,
+    student: { name: student.name, email: student.email, phone: student.phone },
+    className: classRow.name,
+  }));
 }

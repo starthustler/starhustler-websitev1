@@ -112,6 +112,9 @@ export default function ManagedClassPage({ slug }) {
     c.pricing.useGlobalPaymentUrl !== false
       ? settingsQuery.data?.paymentUrl || c.pricing.paymentUrl
       : c.pricing.paymentUrl;
+  const checkoutUrl = c.registration?.enabled && settingsQuery.data?.checkoutMode === "integrated"
+    ? `/kelas/${slug}/daftar`
+    : paymentUrl;
   const eventData = {
     content_name: record.name,
     content_ids: [slug],
@@ -119,7 +122,7 @@ export default function ManagedClassPage({ slug }) {
     value: c.pricing.sellingPrice,
     currency: "IDR",
   };
-  const handlePaymentClick = (event, href = paymentUrl) => {
+  const handlePaymentClick = (event, href = checkoutUrl) => {
     if (event.defaultPrevented) return;
     if (
       event.button !== 0 ||
@@ -136,8 +139,8 @@ export default function ManagedClassPage({ slug }) {
   };
   const cta = label => (
     <PrimaryButton
-      href={paymentUrl}
-      onClick={event => handlePaymentClick(event, paymentUrl)}
+      href={checkoutUrl}
+      onClick={event => handlePaymentClick(event, checkoutUrl)}
     >
       {label || c.hero.primaryCtaLabel}
       <ArrowRight size={16} />
@@ -327,7 +330,7 @@ export default function ManagedClassPage({ slug }) {
       <ClassSeo seo={c.seo} faq={c.faq} />
       <AnnouncementBar
         config={c.announcement}
-        paymentUrl={paymentUrl}
+        paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}
       />
       <Navbar />
@@ -371,14 +374,14 @@ export default function ManagedClassPage({ slug }) {
       )}
       <FloatingNotification
         settings={c.notificationSettings}
-        paymentUrl={paymentUrl}
+        paymentUrl={checkoutUrl}
         hasFloatingCta={c.floatingCta.enabled}
         onPaymentClick={handlePaymentClick}
       />
       <FloatingCta
         config={c.floatingCta}
         countdown={c.countdown}
-        paymentUrl={paymentUrl}
+        paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}
       />
     </div>

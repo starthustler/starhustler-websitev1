@@ -547,8 +547,13 @@ export default function AdminClassEditorPage({ id }) {
 
         <Panel
           title="Pricing & Payment"
-          description="Gunakan central payment dari Settings atau URL khusus untuk kelas ini."
+          description="Harga tersimpan di server. Aktifkan registrasi terintegrasi untuk memakai DOKU Checkout dan email otomatis."
         >
+          <Toggle
+            label="Registration & DOKU Checkout Enabled"
+            checked={content.registration.enabled}
+            onChange={v => set("content.registration.enabled", v)}
+          />
           <Toggle
             label="Use global payment URL"
             checked={content.pricing.useGlobalPaymentUrl}
@@ -593,6 +598,47 @@ export default function AdminClassEditorPage({ id }) {
             value={content.pricing.paymentUrl}
             onChange={v => set("content.pricing.paymentUrl", v)}
           />}
+        </Panel>
+
+        <Panel
+          title="Session Access"
+          description="Link sesi tidak ditampilkan publik dan hanya dikirim setelah pembayaran terverifikasi."
+        >
+          <label className="admin-field">
+            <span>Meeting Provider</span>
+            <select
+              value={content.registration.meetingProvider}
+              onChange={e => set("content.registration.meetingProvider", e.target.value)}
+            >
+              <option value="zoom">Zoom</option>
+              <option value="google_meet">Google Meet</option>
+              <option value="other">Lainnya</option>
+            </select>
+          </label>
+          <Field
+            label="Meeting Label"
+            value={content.registration.meetingLabel}
+            onChange={v => set("content.registration.meetingLabel", v)}
+          />
+          <Field
+            label="Meeting URL"
+            type="url"
+            value={content.registration.meetingUrl}
+            onChange={v => set("content.registration.meetingUrl", v)}
+            placeholder="https://zoom.us/j/..."
+          />
+          <Field
+            label="Session Date & Time (ISO 8601)"
+            value={content.registration.sessionDateTime}
+            onChange={v => set("content.registration.sessionDateTime", v)}
+            placeholder="2026-09-28T19:00:00+07:00"
+          />
+          <Field
+            label="Timezone"
+            value={content.registration.timezone}
+            onChange={v => set("content.registration.timezone", v)}
+            placeholder="Asia/Jakarta"
+          />
         </Panel>
 
         <Panel title="Core Content">
