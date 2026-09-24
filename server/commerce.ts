@@ -87,7 +87,7 @@ export async function createRegistrationCheckout(input: {
     eventType: "checkout_requested",
     status: "info",
     title: "Permintaan checkout dibuat",
-    message: "Data pendaftaran diterima dan sedang dikirim ke DOKU.",
+    message: "Data pendaftaran diterima. Request dasar yang kompatibel dengan semua channel sedang dikirim ke DOKU.",
   });
   try {
     const checkout = await createDokuCheckout({
@@ -151,7 +151,7 @@ export async function createRegistrationCheckout(input: {
       message: credentialHint
         ? "Periksa apakah Client ID, Active Secret Key, dan pilihan Sandbox/Production sudah sesuai."
         : diagnostic?.httpStatus === 500
-          ? "DOKU mengalami kesalahan internal saat memproses data. Nomor telepon sudah dikirim dalam format kode negara; coba lagi atau gunakan Request ID saat menghubungi DOKU."
+          ? "DOKU mengalami kesalahan internal meskipun request sudah memakai format dasar resmi. Gunakan Request ID ini saat menghubungi DOKU dan pastikan produk DOKU Checkout aktif pada akun Production."
           : "Checkout belum berhasil. Periksa konfigurasi DOKU dan coba kembali.",
       httpStatus: diagnostic?.httpStatus,
       providerCode: diagnostic?.providerCode,
