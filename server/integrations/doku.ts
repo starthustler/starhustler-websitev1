@@ -42,6 +42,16 @@ export function digestBody(rawBody: string) {
   return createHash("sha256").update(rawBody).digest("base64");
 }
 
+/**
+ * DOKU's official Checkout/Postman examples use ISO-8601 UTC timestamps with
+ * second precision. JavaScript's toISOString() includes milliseconds, which is
+ * valid ISO-8601 but is not the exact wire format used by DOKU's reference
+ * implementation. Keep our signed header byte-for-byte compatible with it.
+ */
+export function createDokuRequestTimestamp(date = new Date()) {
+  return `${date.toISOString().slice(0, 19)}Z`;
+}
+
 export function createDokuSignature(input: {
   clientId: string;
   secretKey: string;
@@ -85,6 +95,7 @@ export function buildDokuCheckoutBody(input: {
     },
   };
 }
+
 export function parseDokuExpiry(value: unknown) {
   if (typeof value !== "string") return undefined;
   const match = value.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
@@ -137,7 +148,7 @@ export async function createDokuCheckout(input: {
 }) {
   const target = "/checkout/v1/payment";
   const requestId = crypto.randomUUID();
-  const requestTimestamp = new Date().toISOString();
+  const requestTimestamp = createDokuRequestTimestamp();
   const body = JSON.stringify(buildDokuCheckoutBody(input));
   const digest = digestBody(body);
   const signature = createDokuSignature({
