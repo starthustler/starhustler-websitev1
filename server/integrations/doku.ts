@@ -38,6 +38,78 @@ export function createDokuSignature(input: {
     .digest("base64")}`;
 }
 
+export function buildDokuCheckoutBody(input: {
+  settings: Pick<DokuSettings, "paymentDueMinutes">;
+  invoiceNumber: string;
+  returnId: string;
+  amount: number;
+  className: string;
+  customer: CheckoutCustomer;
+  publicAppUrl: string;
+}) {
+  return {
+    order: {
+      amount: input.amount,
+      invoice_number: input.invoiceNumber,
+      currency: "IDR",
+      callback_url_result: `${input.publicAppUrl}/pembayaran/${input.returnId}`,
+      line_items: [
+        {
+          id: input.invoiceNumber,
+          name: input.className,
+          price: input.amount,
+          quantity: 1,
+        },
+      ],
+    },
+    payment: {
+      payment_due_date: input.settings.paymentDueMinutes,
+    },
+    customer: {
+      id: input.customer.id,
+      name: input.customer.name,
+      email: input.customer.email,
+      phone: input.customer.phone,
+    },
+    additional_info: {
+      override_notification_url: `${input.publicAppUrl}/api/payments/doku/webhook`,
+    },
+  };
+}
+
+export function parseDokuExpiry(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const match = value.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/);
+  if (!match) return undefined;
+  const [, year, month, day, hour, minute, second] = match;
+  // DOKU returns yyyyMMddHHmmss in Western Indonesian Time (UTC+7).
+  const timestamp = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour) - 7,
+    Number(minute),
+    Number(second),
+  );
+  const date = new Date(timestamp);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
+function getDokuErrorMessages(payload: Record<string, any>) {
+  const messages = Array.isArray(payload?.message) ? payload.message : [];
+  const details = messages
+    .map((item: unknown) => {
+      if (typeof item === "string") return item;
+      if (!item || typeof item !== "object") return "";
+      const entry = item as Record<string, unknown>;
+      return [entry.code, entry.message].filter(Boolean).map(String).join(": ");
+    })
+    .filter(Boolean);
+  const fallback = payload?.error?.message || payload?.response?.message;
+  if (details.length) return details;
+  return fallback ? [String(fallback)] : [];
+}
+
 export async function createDokuCheckout(input: {
   settings: DokuSettings;
   invoiceNumber: string;
@@ -50,32 +122,7 @@ export async function createDokuCheckout(input: {
   const target = "/checkout/v1/payment";
   const requestId = crypto.randomUUID();
   const requestTimestamp = new Date().toISOString();
-  const body = JSON.stringify({
-    order: {
-      amount: input.amount,
-      invoice_number: input.invoiceNumber,
-      currency: "IDR",
-      payment_due_date: input.settings.paymentDueMinutes,
-      callback_url_result: `${input.publicAppUrl}/pembayaran/${input.returnId}`,
-      line_items: [
-        {
-          id: input.invoiceNumber,
-          name: input.className,
-          price: input.amount,
-          quantity: 1,
-        },
-      ],
-    },
-    customer: {
-      id: input.customer.id,
-      name: input.customer.name,
-      email: input.customer.email,
-      phone: input.customer.phone,
-    },
-    additional_info: {
-      override_notification_url: `${input.publicAppUrl}/api/payments/doku/webhook`,
-    },
-  });
+  const body = JSON.stringify(buildDokuCheckoutBody(input));
   const digest = digestBody(body);
   const signature = createDokuSignature({
     clientId: input.settings.clientId,
@@ -103,18 +150,24 @@ export async function createDokuCheckout(input: {
   });
   const payload = (await response.json().catch(() => ({}))) as Record<string, any>;
   if (!response.ok || !payload?.response?.payment?.url) {
-    const message =
-      payload?.error?.message ||
-      payload?.response?.message ||
-      `DOKU checkout gagal (${response.status})`;
-    throw new Error(String(message));
+    const messages = getDokuErrorMessages(payload);
+    console.error("[DOKU] Checkout API rejected request", {
+      environment: input.settings.environment,
+      httpStatus: response.status,
+      requestId,
+      messages,
+    });
+    const detail = messages.length ? `: ${messages.join("; ")}` : "";
+    throw new Error(`DOKU checkout gagal (${response.status})${detail}`);
   }
   return {
     paymentUrl: String(payload.response.payment.url),
-    paymentToken: String(payload.response.payment.token || ""),
-    expiresAt: payload.response.payment.expired_date
-      ? new Date(payload.response.payment.expired_date)
-      : new Date(Date.now() + input.settings.paymentDueMinutes * 60_000),
+    paymentToken: String(
+      payload.response.payment.token_id || payload.response.payment.token || "",
+    ),
+    expiresAt:
+      parseDokuExpiry(payload.response.payment.expired_date) ||
+      new Date(Date.now() + input.settings.paymentDueMinutes * 60_000),
   };
 }
 
