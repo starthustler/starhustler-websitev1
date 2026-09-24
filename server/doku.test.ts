@@ -37,6 +37,25 @@ describe("DOKU signature", () => {
     }));
   });
 
+  it("signs DOKU Check Status GET requests without a Digest component", () => {
+    const signature = createDokuSignature({
+      clientId: "CLIENT-1",
+      secretKey: "secret-for-test-only",
+      requestId: "request-status-1",
+      requestTimestamp: "2026-09-24T04:00:00Z",
+      requestTarget: "/orders/v1/status/SH10000",
+    });
+    expect(signature).toMatch(/^HMACSHA256=[A-Za-z0-9+/=]+$/);
+    expect(signature).not.toBe(createDokuSignature({
+      clientId: "CLIENT-1",
+      secretKey: "secret-for-test-only",
+      requestId: "request-status-1",
+      requestTimestamp: "2026-09-24T04:00:00Z",
+      requestTarget: "/orders/v1/status/SH10000",
+      digest: digestBody(""),
+    }));
+  });
+
   it("accepts valid webhook signatures and rejects tampered bodies", () => {
     const rawBody = JSON.stringify({ order: { invoice_number: "SH-TEST", amount: 200000 } });
     const digest = digestBody(rawBody);
@@ -57,6 +76,27 @@ describe("DOKU signature", () => {
     };
     expect(verifyDokuNotification({ rawBody, headers, secretKey: "secret-for-test-only" })).toBe(true);
     expect(verifyDokuNotification({ rawBody: `${rawBody} `, headers, secretKey: "secret-for-test-only" })).toBe(false);
+  });
+
+  it("uses the configured notification path when DOKU omits Request-Target", () => {
+    const rawBody = JSON.stringify({ transaction: { status: "SUCCESS" }, order: { invoice_number: "SH-TEST", amount: 10000 } });
+    const digest = digestBody(rawBody);
+    const requestTarget = "/payments/doku/webhook";
+    const headers = {
+      "client-id": "CLIENT-1",
+      "request-id": "request-3",
+      "request-timestamp": "2026-09-24T04:00:00Z",
+      digest,
+      signature: createDokuSignature({
+        clientId: "CLIENT-1",
+        secretKey: "secret-for-test-only",
+        requestId: "request-3",
+        requestTimestamp: "2026-09-24T04:00:00Z",
+        requestTarget,
+        digest,
+      }),
+    };
+    expect(verifyDokuNotification({ rawBody, headers, secretKey: "secret-for-test-only", requestTarget })).toBe(true);
   });
 
   it("builds DOKU's documented basic Checkout payload", () => {

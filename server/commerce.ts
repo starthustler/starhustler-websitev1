@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { createDokuCheckout, DokuCheckoutError, verifyDokuNotification } from "./integrations/doku.js";
+import { createDokuCheckout, DokuCheckoutError, getDokuOrderStatus, verifyDokuNotification } from "./integrations/doku.js";
 import {
   enrollmentEmailHtml,
   paymentEmailHtml,
@@ -163,8 +163,12 @@ export async function createRegistrationCheckout(input: {
 }
 
 export async function getPublicOrderStatus(publicId: string) {
-  const detail = await db.getOrderDetailsByPublicId(publicId);
+  let detail = await db.getOrderDetailsByPublicId(publicId);
   if (!detail) return undefined;
+  if (detail.order.status === "pending_payment" && Date.now() - detail.order.createdAt.getTime() > 60_000) {
+    await reconcileDokuOrder(detail).catch(error => console.error("[DOKU] Status reconciliation failed", error));
+    detail = await db.getOrderDetailsByPublicId(publicId) || detail;
+  }
   return {
     orderId: detail.order.publicId,
     invoiceNumber: detail.order.invoiceNumber,
@@ -177,10 +181,119 @@ export async function getPublicOrderStatus(publicId: string) {
   };
 }
 
+async function deliverPaidOrder(
+  detail: NonNullable<Awaited<ReturnType<typeof db.getOrderDetailsByPublicId>>>,
+  setupToken: string,
+  eventKey: string,
+) {
+  const content = normalizeClassContent(JSON.parse(detail.classRow.contentJson));
+  const setupUrl = `${publicAppUrl()}/akun/aktivasi/${setupToken}`;
+  await sendOrderEmail(
+    "enrollment_confirmation",
+    detail,
+    enrollmentEmailHtml({
+      name: detail.student.name,
+      className: detail.classRow.name,
+      schedule: content.hero.scheduleText,
+      meetingLabel: content.registration.meetingLabel,
+      meetingUrl: content.registration.meetingUrl,
+      setupUrl,
+    }),
+    `Pembayaran berhasil — ${detail.classRow.name}`
+  );
+  await sendMetaEvent({
+    eventName: "Purchase",
+    eventId: eventKey,
+    sourceUrl: `${publicAppUrl()}/pembayaran/${detail.order.publicId}`,
+    customData: {
+      content_name: detail.classRow.name,
+      content_ids: [detail.classRow.slug],
+      content_type: "product",
+      value: detail.order.amount,
+      currency: "IDR",
+      order_id: detail.order.invoiceNumber,
+    },
+    userData: { email: detail.student.email, phone: detail.student.phone },
+  });
+}
+
+async function applyDokuStatus(input: {
+  detail: NonNullable<Awaited<ReturnType<typeof db.getOrderDetailsByPublicId>>>;
+  status: string;
+  eventKey: string;
+  payload: string;
+  requestId?: string;
+  source: "webhook" | "status_check";
+}) {
+  const result = await db.recordPaymentAndActivate({
+    eventKey: input.eventKey,
+    invoiceNumber: input.detail.order.invoiceNumber,
+    status: input.status,
+    payload: input.payload,
+  });
+  if (result.kind !== "duplicate") {
+    const paid = result.kind === "paid";
+    const settings = await db.getCommerceSettings();
+    await db.recordPaymentActivity({
+      orderId: input.detail.order.id,
+      invoiceNumber: input.detail.order.invoiceNumber,
+      environment: settings.doku.environment,
+      eventType: input.source === "webhook" ? "webhook_processed" : "status_reconciled",
+      status: paid ? "success" : "info",
+      title: paid ? "Pembayaran berhasil dikonfirmasi" : "Status DOKU berhasil diperiksa",
+      message: paid
+        ? "Order otomatis menjadi Berhasil dan email akses mulai diproses."
+        : `DOKU melaporkan status ${input.status}.`,
+      requestId: input.requestId,
+    });
+  }
+  if (result.kind === "paid") {
+    await deliverPaidOrder(input.detail, result.setupToken, input.eventKey);
+  }
+  return result;
+}
+
+const reconciliationThrottle = new Map<string, number>();
+
+async function reconcileDokuOrder(
+  detail: NonNullable<Awaited<ReturnType<typeof db.getOrderDetailsByPublicId>>>,
+) {
+  const lastChecked = reconciliationThrottle.get(detail.order.invoiceNumber) || 0;
+  if (Date.now() - lastChecked < 30_000) return;
+  reconciliationThrottle.set(detail.order.invoiceNumber, Date.now());
+  const settings = await db.getCommerceSettings();
+  if (!settings.doku.clientId || !settings.doku.secretKey) return;
+  const provider = await getDokuOrderStatus({
+    settings: settings.doku,
+    invoiceNumber: detail.order.invoiceNumber,
+  });
+  if (provider.invoiceNumber !== detail.order.invoiceNumber) throw new Error("Nomor invoice DOKU tidak cocok.");
+  if (Number.isFinite(provider.amount) && provider.amount !== detail.order.amount) throw new Error("Nominal DOKU tidak cocok.");
+  return applyDokuStatus({
+    detail,
+    status: provider.status,
+    eventKey: `status-check:${detail.order.invoiceNumber}:${provider.status.toUpperCase()}`,
+    payload: JSON.stringify(provider.payload),
+    requestId: provider.requestId,
+    source: "status_check",
+  });
+}
+
+export async function reconcileRecentPendingOrders(limit = 5) {
+  const pending = await db.listPendingOrdersForReconciliation(limit);
+  const results = await Promise.allSettled(pending.map(detail => reconcileDokuOrder(detail)));
+  return { checked: pending.length, failed: results.filter(result => result.status === "rejected").length };
+}
+
 export async function handleDokuWebhook(req: Request, rawBody: string) {
   const settings = await db.getCommerceSettings();
   if (!settings.doku.secretKey) return { status: 503, body: "DOKU is not configured" };
-  if (!verifyDokuNotification({ rawBody, headers: req.headers, secretKey: settings.doku.secretKey })) {
+  if (!verifyDokuNotification({
+    rawBody,
+    headers: req.headers,
+    secretKey: settings.doku.secretKey,
+    requestTarget: req.path,
+  })) {
     await db.recordPaymentActivity({
       environment: settings.doku.environment,
       eventType: "webhook_rejected",
@@ -209,55 +322,14 @@ export async function handleDokuWebhook(req: Request, rawBody: string) {
   if (!Number.isFinite(amount) || amount !== detail.order.amount)
     return { status: 400, body: "Amount mismatch" };
 
-  const result = await db.recordPaymentAndActivate({
-    eventKey,
-    invoiceNumber,
+  await applyDokuStatus({
+    detail,
     status,
+    eventKey,
     payload: rawBody,
-  });
-  await db.recordPaymentActivity({
-    orderId: detail.order.id,
-    invoiceNumber,
-    environment: settings.doku.environment,
-    eventType: "webhook_processed",
-    status: result.kind === "paid" ? "success" : "info",
-    title: result.kind === "paid" ? "Pembayaran berhasil dikonfirmasi" : "Status DOKU diterima",
-    message: result.kind === "paid"
-      ? "Peserta diaktifkan dan email akses mulai diproses."
-      : `DOKU mengirim status ${status}.`,
     requestId: req.get("request-id") || undefined,
+    source: "webhook",
   });
-  if (result.kind === "paid" && result.setupToken) {
-    const content = normalizeClassContent(JSON.parse(detail.classRow.contentJson));
-    const setupUrl = `${publicAppUrl()}/akun/aktivasi/${result.setupToken}`;
-    await sendOrderEmail(
-      "enrollment_confirmation",
-      detail,
-      enrollmentEmailHtml({
-        name: detail.student.name,
-        className: detail.classRow.name,
-        schedule: content.hero.scheduleText,
-        meetingLabel: content.registration.meetingLabel,
-        meetingUrl: content.registration.meetingUrl,
-        setupUrl,
-      }),
-      `Pembayaran berhasil — ${detail.classRow.name}`
-    );
-    await sendMetaEvent({
-      eventName: "Purchase",
-      eventId: eventKey,
-      sourceUrl: `${publicAppUrl()}/pembayaran/${detail.order.publicId}`,
-      customData: {
-        content_name: detail.classRow.name,
-        content_ids: [detail.classRow.slug],
-        content_type: "product",
-        value: detail.order.amount,
-        currency: "IDR",
-        order_id: detail.order.invoiceNumber,
-      },
-      userData: { email: detail.student.email, phone: detail.student.phone },
-    });
-  }
   return { status: 200, body: "OK" };
 }
 

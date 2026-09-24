@@ -58,18 +58,65 @@ export function createDokuSignature(input: {
   requestId: string;
   requestTimestamp: string;
   requestTarget: string;
-  digest: string;
+  digest?: string;
 }) {
   const component = [
     `Client-Id:${input.clientId}`,
     `Request-Id:${input.requestId}`,
     `Request-Timestamp:${input.requestTimestamp}`,
     `Request-Target:${input.requestTarget}`,
-    `Digest:${input.digest}`,
+    ...(input.digest ? [`Digest:${input.digest}`] : []),
   ].join("\n");
   return `HMACSHA256=${createHmac("sha256", input.secretKey)
     .update(component)
     .digest("base64")}`;
+}
+
+export async function getDokuOrderStatus(input: {
+  settings: DokuSettings;
+  invoiceNumber: string;
+}) {
+  const target = `/orders/v1/status/${encodeURIComponent(input.invoiceNumber)}`;
+  const requestId = crypto.randomUUID();
+  const requestTimestamp = createDokuRequestTimestamp();
+  const signature = createDokuSignature({
+    clientId: input.settings.clientId,
+    secretKey: input.settings.secretKey,
+    requestId,
+    requestTimestamp,
+    requestTarget: target,
+  });
+  const host = input.settings.environment === "production"
+    ? "https://api.doku.com"
+    : "https://api-sandbox.doku.com";
+  const response = await fetch(`${host}${target}`, {
+    method: "GET",
+    headers: {
+      "Client-Id": input.settings.clientId,
+      "Request-Id": requestId,
+      "Request-Timestamp": requestTimestamp,
+      Signature: signature,
+    },
+    signal: AbortSignal.timeout(15_000),
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<string, any>;
+  if (!response.ok) {
+    const messages = getDokuErrorMessages(payload);
+    throw new DokuCheckoutError("Status transaksi DOKU belum dapat diperiksa.", {
+      environment: input.settings.environment,
+      httpStatus: response.status,
+      requestId,
+      providerCode: getDokuProviderCode(payload),
+      providerMessage: messages.join("; ") || undefined,
+    });
+  }
+  return {
+    requestId,
+    payload,
+    status: String(payload?.transaction?.status || payload?.order?.status || "UNKNOWN"),
+    amount: Number(payload?.order?.amount),
+    invoiceNumber: String(payload?.order?.invoice_number || input.invoiceNumber),
+  };
 }
 
 export function buildDokuCheckoutBody(input: {
@@ -216,6 +263,7 @@ export function verifyDokuNotification(input: {
   rawBody: string;
   headers: Record<string, string | string[] | undefined>;
   secretKey: string;
+  requestTarget?: string;
 }) {
   const header = (name: string) => {
     const value = input.headers[name.toLowerCase()];
@@ -224,7 +272,9 @@ export function verifyDokuNotification(input: {
   const clientId = header("client-id");
   const requestId = header("request-id");
   const requestTimestamp = header("request-timestamp");
-  const requestTarget = header("request-target") || "/api/payments/doku/webhook";
+  // DOKU signs the path configured as its Notification URL. Request-Target is
+  // a signing component, not a header sent with the callback.
+  const requestTarget = input.requestTarget || header("request-target") || "/api/payments/doku/webhook";
   const suppliedDigest = header("digest");
   const digest = digestBody(input.rawBody);
   if (suppliedDigest && !safeEqual(suppliedDigest, digest)) return false;

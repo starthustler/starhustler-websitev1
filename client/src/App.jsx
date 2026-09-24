@@ -14,7 +14,6 @@ import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
 import AdminBlogPage from "./pages/AdminBlogPage.jsx";
 import AdminBlogEditorPage from "./pages/AdminBlogEditorPage.jsx";
 import AdminOrdersPage from "./pages/AdminOrdersPage.jsx";
-import ClassRegistrationPage from "./pages/ClassRegistrationPage.jsx";
 import PaymentStatusPage from "./pages/PaymentStatusPage.jsx";
 import StudentActivationPage from "./pages/StudentActivationPage.jsx";
 import StudentClassesPage from "./pages/StudentClassesPage.jsx";
@@ -36,7 +35,10 @@ export default function App() {
         }}
       </Route>
       <Route path="/kelas/:slug/daftar">
-        {params => <ClassRegistrationPage slug={params.slug} />}
+        {params => {
+          window.location.replace(`/kelas/${params.slug}#daftar-kelas`);
+          return null;
+        }}
       </Route>
       <Route path="/kelas/:slug">
         {params => <ManagedClassPage slug={params.slug} />}

@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -953,6 +953,21 @@ export async function getOrderDetailsByInvoice(invoiceNumber: string) {
   return rows[0];
 }
 
+export async function listPendingOrdersForReconciliation(limit = 5) {
+  const db = await requireClassDb();
+  return db.select({ order: classOrders, student: students, classRow: classes })
+    .from(classOrders)
+    .innerJoin(students, eq(classOrders.studentId, students.id))
+    .innerJoin(classes, eq(classOrders.classId, classes.id))
+    .where(and(
+      eq(classOrders.status, "pending_payment"),
+      isNotNull(classOrders.paymentUrl),
+      lt(classOrders.createdAt, new Date(Date.now() - 60_000)),
+    ))
+    .orderBy(desc(classOrders.createdAt))
+    .limit(Math.min(10, Math.max(1, limit)));
+}
+
 export async function recordPaymentAndActivate(input: {
   eventKey: string;
   invoiceNumber: string;
@@ -962,21 +977,23 @@ export async function recordPaymentAndActivate(input: {
   const db = await requireClassDb();
   const detail = await getOrderDetailsByInvoice(input.invoiceNumber);
   if (!detail) return { kind: "unknown_order" as const };
-  const existing = await db.select({ id: paymentEvents.id }).from(paymentEvents)
-    .where(eq(paymentEvents.eventKey, input.eventKey)).limit(1);
-  if (existing[0]) return { kind: "duplicate" as const, detail };
   const success = ["SUCCESS", "COMPLETED", "PAID"].includes(input.status.toUpperCase());
-  let setupToken = "";
-  await db.transaction(async tx => {
-    await tx.insert(paymentEvents).values({
+  return db.transaction(async tx => {
+    const inserted = await tx.insert(paymentEvents).values({
       eventKey: input.eventKey,
       orderId: detail.order.id,
       status: input.status,
       payload: input.payload,
-    }).onConflictDoNothing({ target: paymentEvents.eventKey });
-    if (!success || detail.order.status === "paid") return;
-    await tx.update(classOrders).set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
-      .where(eq(classOrders.id, detail.order.id));
+    }).onConflictDoNothing({ target: paymentEvents.eventKey }).returning({ id: paymentEvents.id });
+    if (!inserted.length) return { kind: "duplicate" as const, detail };
+    // DOKU Checkout may emit FAILED while a buyer changes payment method. Only
+    // a provider-confirmed success is terminal for enrollment activation.
+    if (!success) return { kind: "updated" as const, detail };
+    const transitioned = await tx.update(classOrders)
+      .set({ status: "paid", paidAt: new Date(), updatedAt: new Date() })
+      .where(and(eq(classOrders.id, detail.order.id), ne(classOrders.status, "paid")))
+      .returning({ id: classOrders.id });
+    if (!transitioned.length) return { kind: "already_paid" as const, detail };
     await tx.insert(classEnrollments).values({
       classId: detail.order.classId,
       studentId: detail.order.studentId,
@@ -986,15 +1003,15 @@ export async function recordPaymentAndActivate(input: {
       target: [classEnrollments.studentId, classEnrollments.classId],
       set: { orderId: detail.order.id, status: "active", updatedAt: new Date() },
     });
-    setupToken = randomBytes(32).toString("base64url");
+    const setupToken = randomBytes(32).toString("base64url");
     const tokenHash = createHash("sha256").update(setupToken).digest("hex");
     await tx.insert(passwordSetupTokens).values({
       tokenHash,
       studentId: detail.order.studentId,
       expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
+    return { kind: "paid" as const, detail, setupToken };
   });
-  return { kind: success ? "paid" as const : "updated" as const, detail, setupToken };
 }
 
 export async function getValidPasswordSetupToken(token: string) {
@@ -1103,16 +1120,56 @@ export async function upsertEmailDelivery(input: {
   });
 }
 
-export async function listOrdersForAdmin() {
+export async function listOrdersForAdmin(page = 1, pageSize = 25) {
   const db = await requireClassDb();
-  const rows = await db.select({ order: classOrders, student: students, classRow: classes })
+  const safePage = Math.max(1, page);
+  const safePageSize = Math.min(25, Math.max(1, pageSize));
+  const rows = await db.select({
+    order: classOrders,
+    student: students,
+    classRow: classes,
+    email: emailDeliveries,
+  })
     .from(classOrders)
     .innerJoin(students, eq(classOrders.studentId, students.id))
     .innerJoin(classes, eq(classOrders.classId, classes.id))
-    .orderBy(desc(classOrders.createdAt));
-  return rows.map(({ order, student, classRow }) => ({
-    ...order,
-    student: { name: student.name, email: student.email, phone: student.phone },
-    className: classRow.name,
-  }));
+    .leftJoin(emailDeliveries, and(
+      eq(emailDeliveries.orderId, classOrders.id),
+      eq(emailDeliveries.kind, "enrollment_confirmation"),
+    ))
+    .orderBy(desc(classOrders.createdAt))
+    .limit(safePageSize)
+    .offset((safePage - 1) * safePageSize);
+  const [totalRows, paidRows, pendingRows, failedRows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(classOrders),
+    db.select({ count: sql<number>`count(*)::int` }).from(classOrders).where(eq(classOrders.status, "paid")),
+    db.select({ count: sql<number>`count(*)::int` }).from(classOrders).where(eq(classOrders.status, "pending_payment")),
+    db.select({ count: sql<number>`count(*)::int` }).from(classOrders).where(sql`${classOrders.status} in ('failed', 'expired')`),
+  ]);
+  const total = totalRows[0]?.count || 0;
+  return {
+    items: rows.map(({ order, student, classRow, email }) => ({
+      ...order,
+      student: { name: student.name, email: student.email, phone: student.phone },
+      className: classRow.name,
+      emailDelivery: email ? {
+        status: email.status,
+        attempts: email.attempts,
+        sentAt: email.sentAt,
+        lastError: email.lastError,
+        updatedAt: email.updatedAt,
+      } : null,
+    })),
+    summary: {
+      paid: paidRows[0]?.count || 0,
+      pending: pendingRows[0]?.count || 0,
+      failed: failedRows[0]?.count || 0,
+    },
+    pagination: {
+      page: safePage,
+      pageSize: safePageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / safePageSize)),
+    },
+  };
 }

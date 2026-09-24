@@ -8,6 +8,7 @@ import { trpc } from "../lib/trpc";
 import ClassVideo from "../components/class/ClassVideo.jsx";
 import ClassFaq from "../components/class/ClassFaq.jsx";
 import ClassSeo from "../components/class/ClassSeo.jsx";
+import ClassCheckoutSection from "../components/class/ClassCheckoutSection.jsx";
 import {
   AnnouncementBar,
   FloatingCta,
@@ -63,7 +64,6 @@ export default function ManagedClassPage({ slug }) {
     { enabled: preview, retry: false }
   );
   const authQuery = trpc.auth.me.useQuery(undefined, { retry: false });
-  const settingsQuery = trpc.settings.public.useQuery(undefined, { retry: 1 });
   const meta = useMetaTracking();
   const trackedView = useRef("");
   const queried = preview ? previewQuery.data : publicQuery.data;
@@ -108,13 +108,7 @@ export default function ManagedClassPage({ slug }) {
     );
   }
 
-  const paymentUrl =
-    c.pricing.useGlobalPaymentUrl !== false
-      ? settingsQuery.data?.paymentUrl || c.pricing.paymentUrl
-      : c.pricing.paymentUrl;
-  const checkoutUrl = c.registration?.enabled && settingsQuery.data?.checkoutMode === "integrated"
-    ? `/kelas/${slug}/daftar`
-    : paymentUrl;
+  const checkoutUrl = "#daftar-kelas";
   const eventData = {
     content_name: record.name,
     content_ids: [slug],
@@ -122,7 +116,7 @@ export default function ManagedClassPage({ slug }) {
     value: c.pricing.sellingPrice,
     currency: "IDR",
   };
-  const handlePaymentClick = (event, href = checkoutUrl) => {
+  const handlePaymentClick = event => {
     if (event.defaultPrevented) return;
     if (
       event.button !== 0 ||
@@ -135,12 +129,13 @@ export default function ManagedClassPage({ slug }) {
       return;
     }
     event.preventDefault();
-    void meta.trackCheckoutAndNavigate(href, eventData);
+    void meta.track("InitiateCheckout", eventData);
+    document.getElementById("daftar-kelas")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
   const cta = label => (
     <PrimaryButton
       href={checkoutUrl}
-      onClick={event => handlePaymentClick(event, checkoutUrl)}
+      onClick={handlePaymentClick}
     >
       {label || c.hero.primaryCtaLabel}
       <ArrowRight size={16} />
@@ -323,13 +318,30 @@ export default function ManagedClassPage({ slug }) {
     ),
   };
 
+  const orderedSections = [];
+  let checkoutAdded = false;
+  for (const key of c.sectionOrder || []) {
+    if (key === "faq" && !checkoutAdded) {
+      orderedSections.push(<ClassCheckoutSection key="checkout" record={record} slug={slug} content={c} />);
+      checkoutAdded = true;
+    }
+    if (sectionMap[key]) orderedSections.push(sectionMap[key]);
+    if (key === "mentor" && !checkoutAdded) {
+      orderedSections.push(<ClassCheckoutSection key="checkout" record={record} slug={slug} content={c} />);
+      checkoutAdded = true;
+    }
+  }
+  if (!checkoutAdded) {
+    orderedSections.push(<ClassCheckoutSection key="checkout" record={record} slug={slug} content={c} />);
+  }
+
   return (
     <div
       className={`site-page class-detail-page${c.floatingCta.enabled ? " has-class-floating-cta" : ""}`}
     >
       <ClassSeo seo={c.seo} faq={c.faq} />
       <AnnouncementBar
-        config={c.announcement}
+        config={{ ...c.announcement, ctaUrl: checkoutUrl }}
         paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}
       />
@@ -361,7 +373,7 @@ export default function ManagedClassPage({ slug }) {
             </div>
           </section>
         )}
-        {(c.sectionOrder || []).map(key => sectionMap[key]).filter(Boolean)}
+        {orderedSections}
       </main>
       <Footer />
       {authQuery.data?.role === "admin" && record.id > 0 && (
@@ -379,7 +391,7 @@ export default function ManagedClassPage({ slug }) {
         onPaymentClick={handlePaymentClick}
       />
       <FloatingCta
-        config={c.floatingCta}
+        config={{ ...c.floatingCta, ctaUrl: checkoutUrl }}
         countdown={c.countdown}
         paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}

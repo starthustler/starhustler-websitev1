@@ -20,6 +20,7 @@ import { z } from "zod";
 import {
   createRegistrationCheckout,
   getPublicOrderStatus,
+  reconcileRecentPendingOrders,
   resendEnrollmentConfirmation,
   sendResendTest,
 } from "./commerce.js";
@@ -398,7 +399,15 @@ export const appRouter = router({
     sendResendTest: adminProcedure
       .input(z.object({ to: z.string().email().max(320) }))
       .mutation(({ input }) => sendResendTest(input.to)),
-    orders: adminProcedure.query(() => db.listOrdersForAdmin()),
+    orders: adminProcedure
+      .input(z.object({
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(1).max(25).default(25),
+      }).optional())
+      .query(async ({ input }) => {
+        await reconcileRecentPendingOrders(5);
+        return db.listOrdersForAdmin(input?.page || 1, input?.pageSize || 25);
+      }),
     paymentLogs: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(250).default(100) }).optional())
       .query(({ input }) => db.listPaymentActivityForAdmin(input?.limit || 100)),
