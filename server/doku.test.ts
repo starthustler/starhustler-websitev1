@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDokuCheckoutBody,
   createDokuSignature,
   digestBody,
+  parseDokuExpiry,
   verifyDokuNotification,
 } from "./integrations/doku.js";
 
@@ -47,5 +49,35 @@ describe("DOKU signature", () => {
     };
     expect(verifyDokuNotification({ rawBody, headers, secretKey: "secret-for-test-only" })).toBe(true);
     expect(verifyDokuNotification({ rawBody: `${rawBody} `, headers, secretKey: "secret-for-test-only" })).toBe(false);
+  });
+
+  it("builds the Checkout payload using DOKU's payment object", () => {
+    const payload = buildDokuCheckoutBody({
+      settings: { paymentDueMinutes: 60 },
+      invoiceNumber: "SH-TEST",
+      returnId: "return-1",
+      amount: 200000,
+      className: "Kelas Solopreneur",
+      customer: {
+        id: "customer-1",
+        name: "Test User",
+        email: "test@example.com",
+        phone: "08123456789",
+      },
+      publicAppUrl: "https://www.starthustler.com",
+    });
+
+    expect(payload.payment).toEqual({ payment_due_date: 60 });
+    expect(payload.order).not.toHaveProperty("payment_due_date");
+    expect(payload.order.callback_url_result).toBe(
+      "https://www.starthustler.com/pembayaran/return-1",
+    );
+  });
+
+  it("parses DOKU expiry timestamps as Western Indonesian Time", () => {
+    expect(parseDokuExpiry("20240712104711")?.toISOString()).toBe(
+      "2024-07-12T03:47:11.000Z",
+    );
+    expect(parseDokuExpiry("not-a-date")).toBeUndefined();
   });
 });
