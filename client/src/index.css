@@ -805,6 +805,11 @@ button { border:0; }
   font-size: 13px;
   font-weight: 800;
 }
+.admin-field > label {
+  color: #3f485b;
+  font-size: 13px;
+  font-weight: 800;
+}
 .admin-field input,
 .admin-field textarea,
 .admin-field select {
@@ -823,6 +828,63 @@ button { border:0; }
 }
 .admin-field small {
   color: #7b8496;
+}
+.admin-doku-guide {
+  background: #f4f8ff;
+  border: 1px solid #cfe0ff;
+  border-radius: 10px;
+  color: #28344c;
+  margin-bottom: 22px;
+  padding: 16px 18px;
+}
+.admin-doku-guide > strong {
+  display: block;
+  margin-bottom: 10px;
+}
+.admin-doku-guide > div {
+  align-items: center;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(130px, 190px) 16px minmax(0, 1fr);
+  margin-top: 7px;
+}
+.admin-doku-guide code {
+  background: #fff;
+  border: 1px solid #d9e5fa;
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.admin-doku-guide p {
+  color: #5a6579;
+  font-size: 13px;
+  margin: 12px 0 0;
+}
+.admin-credential-row {
+  align-items: stretch;
+  display: flex;
+  gap: 8px;
+}
+.admin-credential-row > input {
+  flex: 1;
+  min-width: 0;
+}
+.admin-input-action {
+  align-items: center;
+  background: #eef4ff;
+  border: 1px solid #cbd8ed;
+  border-radius: 8px;
+  color: #17345f;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+  justify-content: center;
+  min-width: 43px;
+  padding: 0 12px;
+}
+.admin-input-action:hover {
+  background: #dfeaff;
 }
 .admin-toggle {
   align-items: center;
@@ -1155,6 +1217,18 @@ button { border:0; }
   .admin-field--wide,
   .admin-image-field {
     grid-column: auto;
+  }
+  .admin-credential-row {
+    flex-wrap: wrap;
+  }
+  .admin-credential-row > input {
+    flex-basis: calc(100% - 60px);
+  }
+  .admin-input-action--paste {
+    min-height: 44px;
+  }
+  .admin-doku-guide > div {
+    grid-template-columns: minmax(110px, 1fr) 14px minmax(0, 1fr);
   }
   .admin-repeater > article {
     display: block;
