@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardPaste, Eye, EyeOff, Save, Send } from "lucide-react";
+import { ClipboardPaste, Copy, Eye, EyeOff, Save, Send } from "lucide-react";
 import AdminShell from "../components/admin/AdminShell.jsx";
 import { trpc } from "../lib/trpc";
 import { extractDokuCredential } from "@shared/dokuCredentials";
@@ -43,6 +43,7 @@ export default function AdminSettingsPage() {
   });
   const [resendTestTo, setResendTestTo] = useState("");
   const [showDokuSecret, setShowDokuSecret] = useState(false);
+  const notificationUrl = "https://www.starthustler.com/api/payments/doku/webhook";
 
   useEffect(() => {
     if (query.data)
@@ -158,6 +159,14 @@ export default function AdminSettingsPage() {
       setMessage(`Browser tidak mengizinkan akses clipboard. Klik kolom ${label}, lalu gunakan Ctrl+V.`);
     }
   };
+  const copyNotificationUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(notificationUrl);
+      setMessage("Notification URL DOKU berhasil disalin.");
+    } catch {
+      setMessage(`Salin Notification URL ini secara manual: ${notificationUrl}`);
+    }
+  };
   const dokuCredentialField = ({ keyName, label, kind, configured, secret = false }) => (
     <div className="admin-field">
       <label htmlFor={keyName}>{configured ? `Ganti ${label} (opsional)` : label}</label>
@@ -269,7 +278,16 @@ export default function AdminSettingsPage() {
             {dokuCredentialField({ keyName: "dokuClientId", label: "DOKU Client ID", kind: "clientId", configured: commerceQuery.data?.dokuClientIdConfigured })}
             {dokuCredentialField({ keyName: "dokuSecretKey", label: "DOKU Secret Key", kind: "secretKey", configured: commerceQuery.data?.dokuSecretKeyConfigured, secret: true })}
             {commerceField("dokuPaymentDueMinutes", "Payment Due (menit)", "number")}
-            <div className="admin-field"><span>Status DOKU</span><p>Client ID: <strong>{commerceQuery.data?.dokuClientIdConfigured ? "Terpasang" : "Belum"}</strong></p><p>Secret: <strong>{commerceQuery.data?.dokuSecretKeyConfigured ? "Terpasang" : "Belum"}</strong></p><p>Webhook: <code>/api/payments/doku/webhook</code></p></div>
+            <div className="admin-field">
+              <span>Status DOKU</span>
+              <p>Client ID: <strong>{commerceQuery.data?.dokuClientIdConfigured ? "Terpasang" : "Belum"}</strong></p>
+              <p>Secret: <strong>{commerceQuery.data?.dokuSecretKeyConfigured ? "Terpasang" : "Belum"}</strong></p>
+              <p>Pasang URL berikut pada <strong>DOKU Back Office → Settings → Payment Settings</strong> untuk setiap channel pembayaran aktif:</p>
+              <div className="admin-credential-row">
+                <input value={notificationUrl} readOnly aria-label="DOKU Notification URL" />
+                <button type="button" className="admin-input-action" onClick={copyNotificationUrl}><Copy size={17} /> Salin</button>
+              </div>
+            </div>
             <label className="admin-toggle"><input type="checkbox" checked={commerce.clearDokuClientId} onChange={e => setCommerce({ ...commerce, clearDokuClientId: e.target.checked })} /><span>Hapus Client ID tersimpan</span></label>
             <label className="admin-toggle"><input type="checkbox" checked={commerce.clearDokuSecretKey} onChange={e => setCommerce({ ...commerce, clearDokuSecretKey: e.target.checked })} /><span>Hapus Secret Key tersimpan</span></label>
           </div>
