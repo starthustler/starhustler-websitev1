@@ -1,6 +1,7 @@
 import {
   DEFAULT_CLASS_CONTENT,
   DEFAULT_CLASS_RECORDS,
+  formatClassSchedule,
   normalizeClassContent,
 } from "../shared/classContent.js";
 import {
@@ -309,7 +310,7 @@ export const appRouter = router({
         id: row.id,
         className: row.className,
         slug: row.slug,
-        schedule: row.content.hero.scheduleText,
+        schedule: formatClassSchedule(row.content.schedule),
         meetingLabel: row.content.registration.meetingLabel,
         meetingUrl: row.content.registration.meetingUrl,
       }));

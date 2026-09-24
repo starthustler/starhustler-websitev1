@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { formatRupiah } from "@shared/classContent";
+import { Button } from "../PrimaryButton.jsx";
+import { PriceDisplay } from "./ClassUi.jsx";
 
 function useCountdown(config) {
   const [remaining, setRemaining] = useState(0);
@@ -32,20 +33,22 @@ export function AnnouncementBar({ config, paymentUrl, onPaymentClick }) {
         {config.mainText} <strong>{config.highlightText}</strong>
       </span>
       {config.ctaLabel && (
-        <a
+        <Button
+          variant="text"
+          size="sm"
           href={config.ctaUrl || paymentUrl}
           onClick={event =>
             onPaymentClick?.(event, config.ctaUrl || paymentUrl)
           }
         >
           {config.ctaLabel}
-        </a>
+        </Button>
       )}
     </aside>
   );
 }
 
-export function FloatingCta({ config, countdown, paymentUrl, onPaymentClick }) {
+export function FloatingCta({ config, shared, countdown, paymentUrl, onPaymentClick }) {
   const time = useCountdown(countdown);
   if (!config.enabled) return null;
   return (
@@ -53,14 +56,15 @@ export function FloatingCta({ config, countdown, paymentUrl, onPaymentClick }) {
       <div className="class-floating-cta__inner">
         <div className="class-floating-cta__copy">
           <strong>
-            {config.icon} {config.title}
+            {shared.name}
           </strong>
-          <span>{config.subtitle}</span>
+          <span>{shared.pricing.bundlingLabel}</span>
           <div className="class-floating-cta__price">
-            <b>{formatRupiah(config.currentPrice)}</b>
-            {config.originalPrice > config.currentPrice && (
-              <s>{formatRupiah(config.originalPrice)}</s>
-            )}
+            <PriceDisplay
+              sellingPrice={shared.pricing.sellingPrice}
+              originalPrice={shared.pricing.originalPrice}
+              variant="floating"
+            />
             {time && (
               <small>
                 {countdown.label}: {time}
@@ -68,15 +72,16 @@ export function FloatingCta({ config, countdown, paymentUrl, onPaymentClick }) {
             )}
           </div>
         </div>
-        <a
-          className="button button--primary"
+        <Button
           href={config.ctaUrl || paymentUrl}
+          size="sm"
+          startIcon={shared.cta.icon ? <span aria-hidden="true">{shared.cta.icon}</span> : null}
           onClick={event =>
             onPaymentClick?.(event, config.ctaUrl || paymentUrl)
           }
         >
-          {config.ctaLabel}
-        </a>
+          {shared.cta.label}
+        </Button>
       </div>
     </aside>
   );

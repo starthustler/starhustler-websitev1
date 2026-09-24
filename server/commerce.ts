@@ -6,7 +6,12 @@ import {
   sendEmail,
 } from "./integrations/resend.js";
 import { sendMetaEvent } from "./metaTracking.js";
-import { formatRupiah, normalizeClassContent } from "../shared/classContent.js";
+import {
+  formatClassSchedule,
+  formatRupiah,
+  getClassCheckoutAmount,
+  normalizeClassContent,
+} from "../shared/classContent.js";
 import * as db from "./db.js";
 
 const publicAppUrl = () =>
@@ -66,8 +71,7 @@ export async function createRegistrationCheckout(input: {
   if (!classRecord) throw new Error("Kelas tidak ditemukan atau belum diterbitkan.");
   if (!classRecord.content.registration.enabled)
     throw new Error("Pendaftaran terintegrasi belum dibuka untuk kelas ini.");
-  const amount = Math.round(classRecord.content.pricing.sellingPrice);
-  if (!Number.isSafeInteger(amount) || amount < 1) throw new Error("Harga kelas belum valid.");
+  const amount = getClassCheckoutAmount(classRecord.content);
   const settings = await db.getCommerceSettings();
   if (settings.checkoutMode !== "integrated")
     throw new Error("Checkout terintegrasi belum diaktifkan oleh admin.");
@@ -194,7 +198,7 @@ async function deliverPaidOrder(
     enrollmentEmailHtml({
       name: detail.student.name,
       className: detail.classRow.name,
-      schedule: content.hero.scheduleText,
+      schedule: formatClassSchedule(content.schedule),
       meetingLabel: content.registration.meetingLabel,
       meetingUrl: content.registration.meetingUrl,
       setupUrl,
@@ -355,7 +359,7 @@ export async function resendEnrollmentConfirmation(publicId: string) {
     enrollmentEmailHtml({
       name: detail.student.name,
       className: detail.classRow.name,
-      schedule: content.hero.scheduleText,
+      schedule: formatClassSchedule(content.schedule),
       meetingLabel: content.registration.meetingLabel,
       meetingUrl: content.registration.meetingUrl,
       setupUrl: `${publicAppUrl()}/akun/aktivasi/${token}`,

@@ -27,6 +27,16 @@ export type ClassNotification = {
 export type ClassContent = {
   shortDescription: string;
   fullDescription: string;
+  cta: {
+    label: string;
+    icon: string;
+  };
+  schedule: {
+    badge: string;
+    displayText: string;
+    sessionDateTime: string;
+    timezone: string;
+  };
   hero: {
     eyebrow: string;
     headline: string;
@@ -35,11 +45,8 @@ export type ClassContent = {
     supportingText: string;
     imageUrl: string;
     supportingImageUrl: string;
-    primaryCtaLabel: string;
     secondaryCtaLabel: string;
     secondaryCtaUrl: string;
-    dateBadge: string;
-    scheduleText: string;
     deliveryText: string;
   };
   video: {
@@ -64,8 +71,6 @@ export type ClassContent = {
     meetingProvider: "zoom" | "google_meet" | "other";
     meetingUrl: string;
     meetingLabel: string;
-    sessionDateTime: string;
-    timezone: string;
   };
   intro: {
     lead: string;
@@ -121,7 +126,6 @@ export type ClassContent = {
     enabled: boolean;
     mainText: string;
     highlightText: string;
-    ctaLabel: string;
     ctaUrl: string;
     variant: "blue" | "navy";
   };
@@ -133,13 +137,7 @@ export type ClassContent = {
   };
   floatingCta: {
     enabled: boolean;
-    title: string;
-    subtitle: string;
-    originalPrice: number;
-    currentPrice: number;
-    ctaLabel: string;
     ctaUrl: string;
-    icon: string;
   };
   notificationSettings: {
     enabled: boolean;
@@ -152,7 +150,6 @@ export type ClassContent = {
   finalCta: {
     title: string;
     description: string;
-    ctaLabel: string;
   };
   seo: {
     title: string;
@@ -193,6 +190,16 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     "Dari masalah sehari-hari menjadi produk digital yang dapat diuji dan dijual dengan bantuan AI.",
   fullDescription:
     "Kelas praktis untuk mempelajari cara menemukan peluang, membangun produk digital, dan mulai menguji potensi bisnisnya sebagai solopreneur.",
+  cta: {
+    label: "Daftar Kelas",
+    icon: "🚀",
+  },
+  schedule: {
+    badge: "AUG 28",
+    displayText: "Senin, 28 Agustus 2026\n19.00 - 21.00",
+    sessionDateTime: "2026-08-28T19:00:00+07:00",
+    timezone: "Asia/Jakarta",
+  },
   hero: {
     eyebrow: "Solopreneur Class",
     headline:
@@ -203,11 +210,8 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     supportingText: "",
     imageUrl: "/assets/starhustler-course-creators_4af6efe2.webp",
     supportingImageUrl: "",
-    primaryCtaLabel: "Daftar Kelas",
     secondaryCtaLabel: "",
     secondaryCtaUrl: "",
-    dateBadge: "AUG 28",
-    scheduleText: "Senin, 28 Agustus 2026\n19.00 - 21.00",
     deliveryText:
       "Live via Zoom\nDiberikan setelah peserta masuk ke grup komunitas",
   },
@@ -234,8 +238,6 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     meetingProvider: "zoom",
     meetingUrl: "",
     meetingLabel: "Live via Zoom",
-    sessionDateTime: "2026-08-28T19:00:00+07:00",
-    timezone: "Asia/Jakarta",
   },
   intro: {
     lead: "Selama dua jam, kamu akan diajak melihat cara seorang solopreneur menemukan peluang dari masalah sehari hari, mengubahnya menjadi ide aplikasi, lalu mulai membangunnya dengan bantuan AI.",
@@ -386,7 +388,6 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     enabled: true,
     mainText: "Pendaftaran Kelas Dibuka",
     highlightText: "Kelas Solopreneur",
-    ctaLabel: "Daftar",
     ctaUrl: "",
     variant: "blue",
   },
@@ -398,13 +399,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
   },
   floatingCta: {
     enabled: true,
-    title: "Kelas Solopreneur",
-    subtitle: "Paket bundling kelas + ebook",
-    originalPrice: 300000,
-    currentPrice: 200000,
-    ctaLabel: "Daftar Kelas",
     ctaUrl: "",
-    icon: "🚀",
   },
   notificationSettings: {
     enabled: true,
@@ -468,7 +463,6 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     title: "Mulai bangun produk digital pertamamu",
     description:
       "Pelajari framework praktis untuk menemukan peluang, membangun produk, dan mulai mengujinya.",
-    ctaLabel: "Daftar Kelas",
   },
   seo: {
     title: "Kelas Solopreneur — Dari Ide Sampai Terjual | StartHustler",
@@ -507,9 +501,13 @@ function createCatalogueClass(
     eyebrow: name,
     headline: name,
     description,
-    dateBadge: "SEGERA",
-    scheduleText: "Jadwal kelas akan diumumkan",
     deliveryText: "Informasi kelas tersedia setelah pendaftaran",
+  };
+  content.schedule = {
+    ...content.schedule,
+    badge: "SEGERA",
+    displayText: "Jadwal kelas akan diumumkan",
+    sessionDateTime: "",
   };
   content.pricing = {
     ...content.pricing,
@@ -522,7 +520,6 @@ function createCatalogueClass(
     ...content.registration,
     enabled: false,
     meetingUrl: "",
-    sessionDateTime: "",
   };
   content.mentor = {
     ...content.mentor,
@@ -592,15 +589,92 @@ export function normalizeClassContent(
   input: Partial<ClassContent> | null | undefined
 ): ClassContent {
   if (!input) return structuredClone(DEFAULT_CLASS_CONTENT);
+  // Legacy class JSON remains readable, but only canonical fields are returned
+  // and saved again. This prevents old duplicate values becoming active.
+  const legacyHero = (input.hero || {}) as Partial<ClassContent["hero"]> & {
+    primaryCtaLabel?: string;
+    dateBadge?: string;
+    scheduleText?: string;
+  };
+  const legacyRegistration = (input.registration || {}) as Partial<
+    ClassContent["registration"]
+  > & { sessionDateTime?: string; timezone?: string };
+  const legacyFloating = (input.floatingCta || {}) as Partial<
+    ClassContent["floatingCta"]
+  > & {
+    ctaLabel?: string;
+    icon?: string;
+    originalPrice?: number;
+    currentPrice?: number;
+    title?: string;
+    subtitle?: string;
+  };
+  const {
+    primaryCtaLabel: legacyCtaLabel,
+    dateBadge: legacyDateBadge,
+    scheduleText: legacyScheduleText,
+    ...hero
+  } = legacyHero;
+  const {
+    sessionDateTime: legacySessionDateTime,
+    timezone: legacyTimezone,
+    ...registration
+  } = legacyRegistration;
+  const {
+    ctaLabel: legacyFloatingCtaLabel,
+    icon: legacyFloatingIcon,
+    originalPrice: _legacyFloatingOriginalPrice,
+    currentPrice: _legacyFloatingCurrentPrice,
+    title: _legacyFloatingTitle,
+    subtitle: _legacyFloatingSubtitle,
+    ...floatingCta
+  } = legacyFloating;
+  const { ctaLabel: _legacyAnnouncementCtaLabel, ...announcement } = (
+    input.announcement || {}
+  ) as Partial<ClassContent["announcement"]> & { ctaLabel?: string };
+  const { ctaLabel: _legacyFinalCtaLabel, ...finalCta } = (
+    input.finalCta || {}
+  ) as Partial<ClassContent["finalCta"]> & { ctaLabel?: string };
   return {
     ...structuredClone(DEFAULT_CLASS_CONTENT),
     ...input,
-    hero: { ...DEFAULT_CLASS_CONTENT.hero, ...input.hero },
+    cta: {
+      ...DEFAULT_CLASS_CONTENT.cta,
+      label:
+        input.cta?.label ||
+        legacyCtaLabel ||
+        legacyFloatingCtaLabel ||
+        DEFAULT_CLASS_CONTENT.cta.label,
+      icon:
+        input.cta?.icon ??
+        legacyFloatingIcon ??
+        DEFAULT_CLASS_CONTENT.cta.icon,
+    },
+    schedule: {
+      ...DEFAULT_CLASS_CONTENT.schedule,
+      badge:
+        input.schedule?.badge ??
+        legacyDateBadge ??
+        DEFAULT_CLASS_CONTENT.schedule.badge,
+      displayText:
+        input.schedule?.displayText ??
+        legacyScheduleText ??
+        DEFAULT_CLASS_CONTENT.schedule.displayText,
+      sessionDateTime:
+        input.schedule?.sessionDateTime ??
+        legacySessionDateTime ??
+        DEFAULT_CLASS_CONTENT.schedule.sessionDateTime,
+      timezone:
+        input.schedule?.timezone ??
+        legacyTimezone ??
+        DEFAULT_CLASS_CONTENT.schedule.timezone,
+    },
+    hero: { ...DEFAULT_CLASS_CONTENT.hero, ...hero },
     video: { ...DEFAULT_CLASS_CONTENT.video, ...input.video },
     pricing: { ...DEFAULT_CLASS_CONTENT.pricing, ...input.pricing },
     registration: {
       ...DEFAULT_CLASS_CONTENT.registration,
-      ...input.registration,
+      ...registration,
     },
     intro: { ...DEFAULT_CLASS_CONTENT.intro, ...input.intro },
     story: { ...DEFAULT_CLASS_CONTENT.story, ...input.story },
@@ -610,10 +684,10 @@ export function normalizeClassContent(
     ebook: { ...DEFAULT_CLASS_CONTENT.ebook, ...input.ebook },
     announcement: {
       ...DEFAULT_CLASS_CONTENT.announcement,
-      ...input.announcement,
+      ...announcement,
     },
     countdown: { ...DEFAULT_CLASS_CONTENT.countdown, ...input.countdown },
-    floatingCta: { ...DEFAULT_CLASS_CONTENT.floatingCta, ...input.floatingCta },
+    floatingCta: { ...DEFAULT_CLASS_CONTENT.floatingCta, ...floatingCta },
     notificationSettings: {
       ...DEFAULT_CLASS_CONTENT.notificationSettings,
       ...input.notificationSettings,
@@ -622,10 +696,50 @@ export function normalizeClassContent(
       ...DEFAULT_CLASS_CONTENT.sectionVisibility,
       ...input.sectionVisibility,
     },
-    finalCta: { ...DEFAULT_CLASS_CONTENT.finalCta, ...input.finalCta },
+    finalCta: { ...DEFAULT_CLASS_CONTENT.finalCta, ...finalCta },
     seo: { ...DEFAULT_CLASS_CONTENT.seo, ...input.seo },
   };
 }
 
 export const formatRupiah = (value: number) =>
   `Rp${Math.max(0, Number(value) || 0).toLocaleString("id-ID")}`;
+
+export const formatClassSchedule = (schedule: ClassContent["schedule"]) => {
+  if (schedule.displayText.trim()) return schedule.displayText;
+  if (!schedule.sessionDateTime) return "Jadwal kelas akan diumumkan";
+  const date = new Date(schedule.sessionDateTime);
+  if (Number.isNaN(date.getTime())) return "Jadwal kelas akan diumumkan";
+  return new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: schedule.timezone || "Asia/Jakarta",
+  }).format(date);
+};
+
+export function getSharedClassConfig(name: string, content: ClassContent) {
+  const sellingPrice = Math.round(Number(content.pricing.sellingPrice));
+  const originalPrice = Math.round(Number(content.pricing.originalPrice));
+  return {
+    name,
+    shortDescription: content.shortDescription,
+    cta: content.cta,
+    pricing: {
+      sellingPrice,
+      originalPrice,
+      priceLabel: content.pricing.priceLabel,
+      promoLabel: content.pricing.promoLabel,
+      bundlingLabel: content.pricing.bundlingLabel,
+    },
+    schedule: {
+      ...content.schedule,
+      formatted: formatClassSchedule(content.schedule),
+    },
+  };
+}
+
+export function getClassCheckoutAmount(content: ClassContent) {
+  const amount = getSharedClassConfig("", content).pricing.sellingPrice;
+  if (!Number.isSafeInteger(amount) || amount < 1)
+    throw new Error("Harga kelas belum valid.");
+  return amount;
+}

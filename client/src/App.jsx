@@ -1,31 +1,34 @@
 // StarHustler style contract: every route extends the same navy, white, vivid-blue editorial learning system.
-import Home from "./pages/Home.jsx";
-import ClassesPage from "./pages/ClassesPage.jsx";
-import CompanyTrainingPage from "./pages/CompanyTrainingPage.jsx";
-import CommunityPage from "./pages/CommunityPage.jsx";
-import AboutPage from "./pages/AboutPage.jsx";
-import BlogPage from "./pages/BlogPage.jsx";
-import BlogArticlePage from "./pages/BlogArticlePage.jsx";
+import { lazy, Suspense } from "react";
 import ManagedClassPage from "./pages/ManagedClassPage.jsx";
-import AdminClassesPage from "./pages/AdminClassesPage.jsx";
-import AdminClassEditorPage from "./pages/AdminClassEditorPage.jsx";
-import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
-import AdminSettingsPage from "./pages/AdminSettingsPage.jsx";
-import AdminBlogPage from "./pages/AdminBlogPage.jsx";
-import AdminBlogEditorPage from "./pages/AdminBlogEditorPage.jsx";
-import AdminOrdersPage from "./pages/AdminOrdersPage.jsx";
-import PaymentStatusPage from "./pages/PaymentStatusPage.jsx";
-import StudentActivationPage from "./pages/StudentActivationPage.jsx";
-import StudentClassesPage from "./pages/StudentClassesPage.jsx";
-import NotFoundPage from "./pages/NotFoundPage.jsx";
 import { Route, Switch } from "wouter";
 import MetaPixel from "./components/MetaPixel.jsx";
+
+const Home = lazy(() => import("./pages/Home.jsx"));
+const ClassesPage = lazy(() => import("./pages/ClassesPage.jsx"));
+const CompanyTrainingPage = lazy(() => import("./pages/CompanyTrainingPage.jsx"));
+const CommunityPage = lazy(() => import("./pages/CommunityPage.jsx"));
+const AboutPage = lazy(() => import("./pages/AboutPage.jsx"));
+const BlogPage = lazy(() => import("./pages/BlogPage.jsx"));
+const BlogArticlePage = lazy(() => import("./pages/BlogArticlePage.jsx"));
+const AdminClassesPage = lazy(() => import("./pages/AdminClassesPage.jsx"));
+const AdminClassEditorPage = lazy(() => import("./pages/AdminClassEditorPage.jsx"));
+const AdminDashboardPage = lazy(() => import("./pages/AdminDashboardPage.jsx"));
+const AdminSettingsPage = lazy(() => import("./pages/AdminSettingsPage.jsx"));
+const AdminBlogPage = lazy(() => import("./pages/AdminBlogPage.jsx"));
+const AdminBlogEditorPage = lazy(() => import("./pages/AdminBlogEditorPage.jsx"));
+const AdminOrdersPage = lazy(() => import("./pages/AdminOrdersPage.jsx"));
+const PaymentStatusPage = lazy(() => import("./pages/PaymentStatusPage.jsx"));
+const StudentActivationPage = lazy(() => import("./pages/StudentActivationPage.jsx"));
+const StudentClassesPage = lazy(() => import("./pages/StudentClassesPage.jsx"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage.jsx"));
 
 export default function App() {
   return (
     <>
     <MetaPixel />
-    <Switch>
+    <Suspense fallback={null}>
+      <Switch>
       <Route path="/" component={Home} />
       <Route path="/kelas" component={ClassesPage} />
       <Route path="/kelas/solopreneur-class">
@@ -73,7 +76,8 @@ export default function App() {
       <Route path="/blog" component={BlogPage} />
       <Route path="/blog/:slug" component={BlogArticlePage} />
       <Route component={NotFoundPage} />
-    </Switch>
+      </Switch>
+    </Suspense>
     </>
   );
 }

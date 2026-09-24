@@ -1,14 +1,22 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, Check, Gift, Pencil, Sparkles } from "lucide-react";
-import { DEFAULT_CLASS_RECORDS, formatRupiah } from "@shared/classContent";
+import { ArrowRight, CalendarDays, Check, Gift, Pencil, Sparkles, Video } from "lucide-react";
+import {
+  DEFAULT_CLASS_RECORDS,
+  getSharedClassConfig,
+} from "@shared/classContent";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
-import { PrimaryButton } from "../components/PrimaryButton.jsx";
+import { Button } from "../components/PrimaryButton.jsx";
 import { trpc } from "../lib/trpc";
 import ClassVideo from "../components/class/ClassVideo.jsx";
 import ClassFaq from "../components/class/ClassFaq.jsx";
 import ClassSeo from "../components/class/ClassSeo.jsx";
 import ClassCheckoutSection from "../components/class/ClassCheckoutSection.jsx";
+import {
+  BenefitItem,
+  EventInfo,
+  PriceDisplay,
+} from "../components/class/ClassUi.jsx";
 import {
   AnnouncementBar,
   FloatingCta,
@@ -80,6 +88,10 @@ export default function ManagedClassPage({ slug }) {
         }
       : record.content
     : null;
+  const shared = record && c ? getSharedClassConfig(record.name, c) : null;
+  const deliveryLines = c?.hero.deliveryText
+    ? c.hero.deliveryText.split("\n").filter(Boolean)
+    : [];
 
   useEffect(() => {
     if (!record || !c || preview || trackedView.current === slug) return;
@@ -88,12 +100,12 @@ export default function ManagedClassPage({ slug }) {
       content_name: record.name,
       content_ids: [slug],
       content_type: "product",
-      value: c.pricing.sellingPrice,
+      value: shared.pricing.sellingPrice,
       currency: "IDR",
     });
   }, [record?.id, slug, preview]);
 
-  if (!record || !c) {
+  if (!record || !c || !shared) {
     return (
       <div className="site-page class-detail-page">
         <Navbar />
@@ -113,7 +125,7 @@ export default function ManagedClassPage({ slug }) {
     content_name: record.name,
     content_ids: [slug],
     content_type: "product",
-    value: c.pricing.sellingPrice,
+    value: shared.pricing.sellingPrice,
     currency: "IDR",
   };
   const handlePaymentClick = event => {
@@ -132,14 +144,17 @@ export default function ManagedClassPage({ slug }) {
     void meta.track("InitiateCheckout", eventData);
     document.getElementById("daftar-kelas")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
-  const cta = label => (
-    <PrimaryButton
+  const cta = ({ context = "section", label = shared.cta.label } = {}) => (
+    <Button
       href={checkoutUrl}
       onClick={handlePaymentClick}
+      size={context === "hero" ? "lg" : "md"}
+      className={`class-cta class-cta--${context}`}
+      startIcon={shared.cta.icon ? <span aria-hidden="true">{shared.cta.icon}</span> : null}
+      endIcon={<ArrowRight aria-hidden="true" size={16} />}
     >
-      {label || c.hero.primaryCtaLabel}
-      <ArrowRight size={16} />
-    </PrimaryButton>
+      {label}
+    </Button>
   );
   const visibility = c.sectionVisibility;
   const sectionMap = {
@@ -157,7 +172,7 @@ export default function ManagedClassPage({ slug }) {
             <p>{c.intro.secondBody}</p>
           </div>
         </div>
-        <div className="center-action">{cta()}</div>
+        <div className="center-action">{cta({ context: "section" })}</div>
       </section>
     ),
     painPoints: visibility.painPoints && (
@@ -178,7 +193,14 @@ export default function ManagedClassPage({ slug }) {
           {c.story.highlight && <h3>{c.story.highlight}</h3>}
         </div>
         <div className="class-detail-split__media">
-          <img src={c.story.imageUrl} alt={c.story.title} loading="lazy" />
+          <img
+            src={c.story.imageUrl}
+            alt={c.story.title}
+            width="1440"
+            height="1920"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
       </section>
     ),
@@ -198,7 +220,7 @@ export default function ManagedClassPage({ slug }) {
         </div>
         <p className="class-detail-note">{c.calculation.disclaimer}</p>
         <p>{c.calculation.closing}</p>
-        <div className="center-action">{cta()}</div>
+        <div className="center-action">{cta({ context: "section" })}</div>
       </section>
     ),
     solution: visibility.solution && (
@@ -216,7 +238,10 @@ export default function ManagedClassPage({ slug }) {
           <img
             src={c.solution.imageUrl}
             alt={c.solution.title}
+            width="1536"
+            height="1920"
             loading="lazy"
+            decoding="async"
           />
         </div>
       </section>
@@ -227,13 +252,10 @@ export default function ManagedClassPage({ slug }) {
           <h2>Kalau begitu, apa yang akan saya dapatkan?</h2>
           <div className="benefit-grid">
             {active(c.benefits).map(item => (
-              <div key={item.id}>
-                <Check size={18} />
-                <span>{item.title}</span>
-              </div>
+              <BenefitItem key={item.id}>{item.title}</BenefitItem>
             ))}
           </div>
-          <div className="center-action">{cta()}</div>
+          <div className="center-action">{cta({ context: "section" })}</div>
         </div>
       </section>
     ),
@@ -249,6 +271,7 @@ export default function ManagedClassPage({ slug }) {
     bonuses: visibility.bonuses && (
       <ManagedListSection
         key="bonuses"
+        className="class-managed-list--centered"
         eyebrow="Bonus"
         title="Pendamping untuk membantumu mulai"
         items={c.bonuses}
@@ -266,10 +289,17 @@ export default function ManagedClassPage({ slug }) {
           <p>{c.mentor.title}</p>
         </div>
         <div className="class-detail-mentor__card">
-          <img src={c.mentor.imageUrl} alt={c.mentor.name} loading="lazy" />
+          <img
+            src={c.mentor.imageUrl}
+            alt={c.mentor.name}
+            width="1920"
+            height="1080"
+            loading="lazy"
+            decoding="async"
+          />
           <h3>{c.mentor.proofLabel}</h3>
         </div>
-        <div className="center-action">{cta()}</div>
+        <div className="center-action">{cta({ context: "section" })}</div>
       </section>
     ),
     testimonials: visibility.testimonials && (
@@ -287,21 +317,27 @@ export default function ManagedClassPage({ slug }) {
         id="pricing"
       >
         <div>
-          <p className="eyebrow">{c.pricing.promoLabel}</p>
-          <h2>{c.pricing.bundlingLabel}</h2>
+          <p className="eyebrow">{shared.pricing.promoLabel}</p>
+          <h2>{shared.pricing.bundlingLabel}</h2>
           <p>{c.pricing.supportingText}</p>
-          <div className="class-price">
-            <strong>{formatRupiah(c.pricing.sellingPrice)}</strong>
-            {c.pricing.originalPrice > c.pricing.sellingPrice && (
-              <s>{formatRupiah(c.pricing.originalPrice)}</s>
-            )}
-          </div>
+          <PriceDisplay
+            sellingPrice={shared.pricing.sellingPrice}
+            originalPrice={shared.pricing.originalPrice}
+            variant="section"
+          />
           <div className="class-detail-actions">
-            {cta("Saya Mau Paket Bundling 200k")}
+            {cta({ context: "pricing" })}
           </div>
         </div>
         {c.ebook.enabled && (
-          <img src={c.ebook.imageUrl} alt={c.ebook.title} loading="lazy" />
+          <img
+            src={c.ebook.imageUrl}
+            alt={c.ebook.title}
+            width="1920"
+            height="1440"
+            loading="lazy"
+            decoding="async"
+          />
         )}
       </section>
     ),
@@ -312,7 +348,7 @@ export default function ManagedClassPage({ slug }) {
           <p className="eyebrow">StartHustler</p>
           <h2>{c.finalCta.title}</h2>
           <p>{c.finalCta.description}</p>
-          {cta(c.finalCta.ctaLabel)}
+          {cta({ context: "final" })}
         </div>
       </section>
     ),
@@ -341,7 +377,7 @@ export default function ManagedClassPage({ slug }) {
     >
       <ClassSeo seo={c.seo} faq={c.faq} />
       <AnnouncementBar
-        config={{ ...c.announcement, ctaUrl: checkoutUrl }}
+        config={{ ...c.announcement, ctaLabel: shared.cta.label, ctaUrl: checkoutUrl }}
         paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}
       />
@@ -357,18 +393,33 @@ export default function ManagedClassPage({ slug }) {
               {c.hero.description && (
                 <p className="class-hero-description">{c.hero.description}</p>
               )}
-              <div className="class-detail-meta">
-                <span>{c.hero.dateBadge}</span>
-                <span>{c.hero.scheduleText}</span>
-                <span>{c.hero.deliveryText}</span>
-              </div>
-              {cta()}
+              <EventInfo
+                className="class-detail-meta"
+                items={[
+                  {
+                    key: "schedule",
+                    label: "Jadwal Kelas",
+                    value: shared.schedule.formatted,
+                    icon: <CalendarDays aria-hidden="true" size={19} />,
+                  },
+                  {
+                    key: "delivery",
+                    label: deliveryLines[0] || c.registration.meetingLabel,
+                    value: deliveryLines.slice(1).join(" ") || "Informasi akses diberikan setelah pendaftaran.",
+                    icon: <Video aria-hidden="true" size={19} />,
+                  },
+                ]}
+              />
+              {cta({ context: "hero" })}
             </div>
             <div className="class-detail-hero__art">
               <img
                 src={c.hero.imageUrl}
                 alt={c.hero.headline}
+                width="1920"
+                height="1080"
                 fetchPriority="high"
+                decoding="async"
               />
             </div>
           </section>
@@ -392,6 +443,7 @@ export default function ManagedClassPage({ slug }) {
       />
       <FloatingCta
         config={{ ...c.floatingCta, ctaUrl: checkoutUrl }}
+        shared={shared}
         countdown={c.countdown}
         paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}

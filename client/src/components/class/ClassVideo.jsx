@@ -23,6 +23,7 @@ export default function ClassVideo({ config }) {
             src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1`}
             title={config.title || "Video kelas"}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
             allowFullScreen
           />
         ) : (
@@ -35,7 +36,10 @@ export default function ClassVideo({ config }) {
             <img
               src={thumbnail}
               alt={`Preview ${config.title || "video kelas"}`}
+              width="1280"
+              height="720"
               loading="lazy"
+              decoding="async"
             />
             <span>
               <Play size={27} fill="currentColor" />

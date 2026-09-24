@@ -432,6 +432,17 @@ export default function AdminClassEditorPage({ id }) {
             value={content.shortDescription}
             onChange={v => set("content.shortDescription", v)}
           />
+          <Field
+            label="CTA Label"
+            value={content.cta.label}
+            onChange={v => set("content.cta.label", v)}
+            help="Dipakai oleh Hero, Pricing, Floating CTA, dan CTA pendaftaran lainnya."
+          />
+          <Field
+            label="Optional CTA Icon"
+            value={content.cta.icon}
+            onChange={v => set("content.cta.icon", v)}
+          />
         </Panel>
 
         <Panel title="Section Visibility & Order">
@@ -477,22 +488,6 @@ export default function AdminClassEditorPage({ id }) {
             label="Description"
             value={content.hero.description}
             onChange={v => set("content.hero.description", v)}
-          />
-          <Field
-            label="Primary CTA Label"
-            value={content.hero.primaryCtaLabel}
-            onChange={v => set("content.hero.primaryCtaLabel", v)}
-          />
-          <Field
-            label="Date Badge"
-            value={content.hero.dateBadge}
-            onChange={v => set("content.hero.dateBadge", v)}
-          />
-          <TextArea
-            label="Schedule"
-            value={content.hero.scheduleText}
-            onChange={v => set("content.hero.scheduleText", v)}
-            rows={2}
           />
           <TextArea
             label="Delivery Info"
@@ -604,6 +599,17 @@ export default function AdminClassEditorPage({ id }) {
           title="Session Access"
           description="Link sesi tidak ditampilkan publik dan hanya dikirim setelah pembayaran terverifikasi."
         >
+          <Field
+            label="Schedule Badge"
+            value={content.schedule.badge}
+            onChange={v => set("content.schedule.badge", v)}
+          />
+          <TextArea
+            label="Schedule Display"
+            value={content.schedule.displayText}
+            onChange={v => set("content.schedule.displayText", v)}
+            rows={2}
+          />
           <label className="admin-field">
             <span>Meeting Provider</span>
             <select
@@ -629,14 +635,14 @@ export default function AdminClassEditorPage({ id }) {
           />
           <Field
             label="Session Date & Time (ISO 8601)"
-            value={content.registration.sessionDateTime}
-            onChange={v => set("content.registration.sessionDateTime", v)}
+            value={content.schedule.sessionDateTime}
+            onChange={v => set("content.schedule.sessionDateTime", v)}
             placeholder="2026-09-28T19:00:00+07:00"
           />
           <Field
             label="Timezone"
-            value={content.registration.timezone}
-            onChange={v => set("content.registration.timezone", v)}
+            value={content.schedule.timezone}
+            onChange={v => set("content.schedule.timezone", v)}
             placeholder="Asia/Jakarta"
           />
         </Panel>
@@ -778,51 +784,20 @@ export default function AdminClassEditorPage({ id }) {
           />
         </Panel>
 
-        <Panel title="Floating CTA">
+        <Panel
+          title="Floating CTA"
+          description="Harga, label CTA, dan icon otomatis mengikuti konfigurasi utama kelas."
+        >
           <Toggle
             label="Enabled"
             checked={content.floatingCta.enabled}
             onChange={v => set("content.floatingCta.enabled", v)}
           />
           <Field
-            label="Title"
-            value={content.floatingCta.title}
-            onChange={v => set("content.floatingCta.title", v)}
-          />
-          <Field
-            label="Subtitle"
-            value={content.floatingCta.subtitle}
-            onChange={v => set("content.floatingCta.subtitle", v)}
-          />
-          <Field
-            label="Original Price"
-            type="number"
-            min="0"
-            value={content.floatingCta.originalPrice}
-            onChange={v => set("content.floatingCta.originalPrice", v)}
-          />
-          <Field
-            label="Current Price"
-            type="number"
-            min="0"
-            value={content.floatingCta.currentPrice}
-            onChange={v => set("content.floatingCta.currentPrice", v)}
-          />
-          <Field
-            label="CTA Label"
-            value={content.floatingCta.ctaLabel}
-            onChange={v => set("content.floatingCta.ctaLabel", v)}
-          />
-          <Field
             label="Optional Custom CTA URL"
             value={content.floatingCta.ctaUrl}
             onChange={v => set("content.floatingCta.ctaUrl", v)}
             help="Kosongkan untuk menggunakan Central Payment URL."
-          />
-          <Field
-            label="Optional Icon"
-            value={content.floatingCta.icon}
-            onChange={v => set("content.floatingCta.icon", v)}
           />
         </Panel>
 
@@ -874,11 +849,6 @@ export default function AdminClassEditorPage({ id }) {
             label="Highlight Text"
             value={content.announcement.highlightText}
             onChange={v => set("content.announcement.highlightText", v)}
-          />
-          <Field
-            label="CTA Label"
-            value={content.announcement.ctaLabel}
-            onChange={v => set("content.announcement.ctaLabel", v)}
           />
           <Field
             label="Optional CTA URL"

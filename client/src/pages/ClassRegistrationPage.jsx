@@ -3,7 +3,7 @@ import { ArrowLeft, LockKeyhole, ShieldCheck } from "lucide-react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { trpc } from "../lib/trpc";
-import { formatRupiah } from "@shared/classContent";
+import { formatRupiah, getSharedClassConfig } from "@shared/classContent";
 
 export default function ClassRegistrationPage({ slug }) {
   const classQuery = trpc.classes.bySlug.useQuery({ slug }, { retry: 1 });
@@ -12,6 +12,7 @@ export default function ClassRegistrationPage({ slug }) {
   });
   const [form, setForm] = useState({ name: "", email: "", phone: "" });
   const record = classQuery.data;
+  const shared = record ? getSharedClassConfig(record.name, record.content) : null;
   const update = event => setForm({ ...form, [event.target.name]: event.target.value });
   return (
     <div className="site-page registration-page">
@@ -24,13 +25,13 @@ export default function ClassRegistrationPage({ slug }) {
           <div className="registration-grid">
             <section className="registration-summary">
               <p className="eyebrow">Pendaftaran Kelas</p>
-              <h1>{record.name}</h1>
-              <p>{record.content.shortDescription}</p>
+              <h1>{shared.name}</h1>
+              <p>{shared.shortDescription}</p>
               <div className="registration-price">
-                <span>{record.content.pricing.priceLabel}</span>
-                <strong>{formatRupiah(record.content.pricing.sellingPrice)}</strong>
+                <span>{shared.pricing.priceLabel}</span>
+                <strong>{formatRupiah(shared.pricing.sellingPrice)}</strong>
               </div>
-              <p><strong>Jadwal</strong><br />{record.content.hero.scheduleText}</p>
+              <p><strong>Jadwal</strong><br />{shared.schedule.formatted}</p>
               <div className="registration-trust"><ShieldCheck size={20} /><span>Pembayaran diproses dengan aman oleh DOKU.</span></div>
             </section>
             <form className="registration-card" onSubmit={event => {
