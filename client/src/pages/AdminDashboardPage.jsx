@@ -1,10 +1,11 @@
-import { BookOpen, CreditCard, GraduationCap, Megaphone } from "lucide-react";
+import { BookOpen, CreditCard, GraduationCap, Megaphone, ReceiptText } from "lucide-react";
 import AdminShell from "../components/admin/AdminShell.jsx";
 
 const cards = [
   ["Kelas", "Kelola landing page, harga, kurikulum, dan visibilitas.", "/admin/kelas", GraduationCap],
   ["Blog", "Upload cover, tulis artikel, lalu publish ke halaman Blog.", "/admin/blog", BookOpen],
   ["Pembayaran", "Atur satu URL checkout utama untuk semua kelas.", "/admin/settings#payment", CreditCard],
+  ["Log Pembayaran", "Pantau permintaan checkout, respons DOKU, dan kendala transaksi.", "/admin/orders", ReceiptText],
   ["Meta Ads", "Kelola Pixel ID dan token Conversions API secara aman.", "/admin/settings#meta", Megaphone],
 ];
 

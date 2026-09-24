@@ -1,5 +1,5 @@
 import type { Request } from "express";
-import { createDokuCheckout, verifyDokuNotification } from "./integrations/doku.js";
+import { createDokuCheckout, DokuCheckoutError, verifyDokuNotification } from "./integrations/doku.js";
 import {
   enrollmentEmailHtml,
   paymentEmailHtml,
@@ -80,6 +80,15 @@ export async function createRegistrationCheckout(input: {
     studentId: student.id,
     amount,
   });
+  await db.recordPaymentActivity({
+    orderId: order.id,
+    invoiceNumber: order.invoiceNumber,
+    environment: settings.doku.environment,
+    eventType: "checkout_requested",
+    status: "info",
+    title: "Permintaan checkout dibuat",
+    message: "Data pendaftaran diterima dan sedang dikirim ke DOKU.",
+  });
   try {
     const checkout = await createDokuCheckout({
       settings: settings.doku,
@@ -96,6 +105,17 @@ export async function createRegistrationCheckout(input: {
       publicAppUrl: publicAppUrl(),
     });
     await db.setOrderCheckout(order.id, checkout);
+    await db.recordPaymentActivity({
+      orderId: order.id,
+      invoiceNumber: order.invoiceNumber,
+      environment: settings.doku.environment,
+      eventType: "checkout_created",
+      status: "success",
+      title: "Link pembayaran berhasil dibuat",
+      message: "DOKU menerima transaksi dan mengembalikan link pembayaran.",
+      httpStatus: 200,
+      requestId: checkout.requestId,
+    });
     const detail = await db.getOrderDetailsByPublicId(order.publicId);
     if (detail) {
       await sendOrderEmail(
@@ -119,8 +139,26 @@ export async function createRegistrationCheckout(input: {
       expiresAt: checkout.expiresAt.toISOString(),
     };
   } catch (error) {
+    const diagnostic = error instanceof DokuCheckoutError ? error.diagnostic : undefined;
+    const credentialHint = diagnostic?.httpStatus === 401 || diagnostic?.httpStatus === 403;
+    await db.recordPaymentActivity({
+      orderId: order.id,
+      invoiceNumber: order.invoiceNumber,
+      environment: settings.doku.environment,
+      eventType: "checkout_failed",
+      status: "error",
+      title: "DOKU menolak pembuatan checkout",
+      message: credentialHint
+        ? "Periksa apakah Client ID, Active Secret Key, dan pilihan Sandbox/Production sudah sesuai."
+        : diagnostic?.httpStatus === 500
+          ? "DOKU mengalami kesalahan internal saat memproses data. Nomor telepon sudah dikirim dalam format kode negara; coba lagi atau gunakan Request ID saat menghubungi DOKU."
+          : "Checkout belum berhasil. Periksa konfigurasi DOKU dan coba kembali.",
+      httpStatus: diagnostic?.httpStatus,
+      providerCode: diagnostic?.providerCode,
+      requestId: diagnostic?.requestId,
+    });
     console.error("[DOKU] Checkout creation failed", error);
-    throw error;
+    throw new Error("Pembayaran belum dapat dibuat. Silakan coba kembali. Detailnya sudah tercatat di panel admin.");
   }
 }
 
@@ -142,8 +180,17 @@ export async function getPublicOrderStatus(publicId: string) {
 export async function handleDokuWebhook(req: Request, rawBody: string) {
   const settings = await db.getCommerceSettings();
   if (!settings.doku.secretKey) return { status: 503, body: "DOKU is not configured" };
-  if (!verifyDokuNotification({ rawBody, headers: req.headers, secretKey: settings.doku.secretKey }))
+  if (!verifyDokuNotification({ rawBody, headers: req.headers, secretKey: settings.doku.secretKey })) {
+    await db.recordPaymentActivity({
+      environment: settings.doku.environment,
+      eventType: "webhook_rejected",
+      status: "warning",
+      title: "Notifikasi DOKU ditolak",
+      message: "Signature notifikasi tidak valid. Tidak ada status transaksi yang diubah.",
+      requestId: req.get("request-id") || undefined,
+    });
     return { status: 401, body: "Invalid signature" };
+  }
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
@@ -167,6 +214,18 @@ export async function handleDokuWebhook(req: Request, rawBody: string) {
     invoiceNumber,
     status,
     payload: rawBody,
+  });
+  await db.recordPaymentActivity({
+    orderId: detail.order.id,
+    invoiceNumber,
+    environment: settings.doku.environment,
+    eventType: "webhook_processed",
+    status: result.kind === "paid" ? "success" : "info",
+    title: result.kind === "paid" ? "Pembayaran berhasil dikonfirmasi" : "Status DOKU diterima",
+    message: result.kind === "paid"
+      ? "Peserta diaktifkan dan email akses mulai diproses."
+      : `DOKU mengirim status ${status}.`,
+    requestId: req.get("request-id") || undefined,
   });
   if (result.kind === "paid" && result.setupToken) {
     const content = normalizeClassContent(JSON.parse(detail.classRow.contentJson));

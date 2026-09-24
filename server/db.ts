@@ -9,6 +9,7 @@ import {
   classes,
   emailDeliveries,
   passwordSetupTokens,
+  paymentActivityLogs,
   paymentEvents,
   type InsertClass,
   type InsertUser,
@@ -107,6 +108,15 @@ export async function ensureClassCmsSchema(): Promise<void> {
         "orderId" integer, "status" varchar(32) NOT NULL, "payload" text NOT NULL,
         "receivedAt" timestamptz NOT NULL DEFAULT now()
       );
+      CREATE TABLE IF NOT EXISTS "payment_activity_logs" (
+        "id" serial PRIMARY KEY, "orderId" integer, "invoiceNumber" varchar(64),
+        "provider" varchar(32) NOT NULL DEFAULT 'DOKU', "environment" varchar(16),
+        "eventType" varchar(40) NOT NULL, "status" varchar(16) NOT NULL,
+        "title" varchar(180) NOT NULL, "message" text NOT NULL,
+        "httpStatus" integer, "providerCode" varchar(80), "requestId" varchar(128),
+        "createdAt" timestamptz NOT NULL DEFAULT now()
+      );
+      CREATE INDEX IF NOT EXISTS "payment_activity_logs_created_idx" ON "payment_activity_logs" ("createdAt");
       CREATE TABLE IF NOT EXISTS "password_setup_tokens" (
         "tokenHash" varchar(64) PRIMARY KEY, "studentId" integer NOT NULL,
         "createdAt" timestamptz NOT NULL DEFAULT now(), "expiresAt" timestamptz NOT NULL,
@@ -891,6 +901,33 @@ export async function setOrderCheckout(orderId: number, input: {
 }) {
   const db = await requireClassDb();
   await db.update(classOrders).set({ ...input, updatedAt: new Date() }).where(eq(classOrders.id, orderId));
+}
+
+export async function recordPaymentActivity(input: {
+  orderId?: number;
+  invoiceNumber?: string;
+  provider?: string;
+  environment?: string;
+  eventType: string;
+  status: "info" | "success" | "warning" | "error";
+  title: string;
+  message: string;
+  httpStatus?: number;
+  providerCode?: string;
+  requestId?: string;
+}) {
+  const db = await requireClassDb();
+  await db.insert(paymentActivityLogs).values({
+    ...input,
+    provider: input.provider || "DOKU",
+  });
+}
+
+export async function listPaymentActivityForAdmin(limit = 100) {
+  const db = await requireClassDb();
+  return db.select().from(paymentActivityLogs)
+    .orderBy(desc(paymentActivityLogs.createdAt))
+    .limit(Math.min(250, Math.max(1, limit)));
 }
 
 export async function getOrderDetailsByPublicId(publicId: string) {

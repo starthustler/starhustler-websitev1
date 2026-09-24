@@ -146,6 +146,26 @@ export const paymentEvents = pgTable("payment_events", {
   receivedAt: timestamp("receivedAt", { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const paymentActivityLogs = pgTable(
+  "payment_activity_logs",
+  {
+    id: serial("id").primaryKey(),
+    orderId: integer("orderId"),
+    invoiceNumber: varchar("invoiceNumber", { length: 64 }),
+    provider: varchar("provider", { length: 32 }).default("DOKU").notNull(),
+    environment: varchar("environment", { length: 16 }),
+    eventType: varchar("eventType", { length: 40 }).notNull(),
+    status: varchar("status", { length: 16 }).notNull(),
+    title: varchar("title", { length: 180 }).notNull(),
+    message: text("message").notNull(),
+    httpStatus: integer("httpStatus"),
+    providerCode: varchar("providerCode", { length: 80 }),
+    requestId: varchar("requestId", { length: 128 }),
+    createdAt: timestamp("createdAt", { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => [index("payment_activity_logs_created_idx").on(table.createdAt)]
+);
+
 export const passwordSetupTokens = pgTable("password_setup_tokens", {
   tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
   studentId: integer("studentId").notNull(),

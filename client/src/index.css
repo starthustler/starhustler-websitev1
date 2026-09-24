@@ -679,6 +679,30 @@ button { border:0; }
   border: 1px solid #e1e6f0;
   overflow: auto;
 }
+.payment-log-list { display:grid; gap:10px; }
+.payment-log { align-items:flex-start; background:#f8faff; border:1px solid #e2e8f2; border-left:4px solid #8c96a8; display:grid; gap:13px; grid-template-columns:34px minmax(0,1fr); padding:15px 17px; }
+.payment-log--success { background:#f4fbf6; border-left-color:#20a259; }
+.payment-log--error { background:#fff6f5; border-left-color:#d04444; }
+.payment-log--warning { background:#fffaf0; border-left-color:#d9931e; }
+.payment-log--info { border-left-color:var(--blue); }
+.payment-log__icon { align-items:center; background:#fff; border:1px solid #dfe5ef; border-radius:50%; color:#5a6579; display:flex; height:34px; justify-content:center; width:34px; }
+.payment-log--success .payment-log__icon { color:#148044; }
+.payment-log--error .payment-log__icon { color:#b52d2d; }
+.payment-log--warning .payment-log__icon { color:#a86c0a; }
+.payment-log--info .payment-log__icon { color:var(--blue); }
+.payment-log__heading { align-items:center; display:flex; gap:14px; justify-content:space-between; }
+.payment-log__heading strong { color:var(--navy); font-size:15px; }
+.payment-log__heading time { color:#7a8496; font-size:12px; white-space:nowrap; }
+.payment-log__body > p { color:#4f5a6d; font-size:14px; line-height:1.55; margin:5px 0 10px; }
+.payment-log__meta { display:flex; flex-wrap:wrap; gap:6px 14px; }
+.payment-log__meta span { color:#687386; font-size:11px; }
+.payment-log__meta code { color:#344158; font-size:11px; overflow-wrap:anywhere; }
+.payment-log-empty { align-items:center; color:#6b7588; display:flex; gap:11px; justify-content:center; min-height:110px; text-align:center; }
+.payment-log-empty p { margin:0; }
+@media (max-width:720px) {
+  .payment-log { grid-template-columns:30px minmax(0,1fr); padding:13px; }
+  .payment-log__heading { align-items:flex-start; flex-direction:column; gap:3px; }
+}
 .admin-table {
   border-collapse: collapse;
   min-width: 850px;

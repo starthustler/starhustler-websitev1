@@ -14,6 +14,30 @@ export type CheckoutCustomer = {
   phone: string;
 };
 
+export class DokuCheckoutError extends Error {
+  constructor(
+    message: string,
+    public readonly diagnostic: {
+      environment: DokuSettings["environment"];
+      httpStatus: number;
+      requestId: string;
+      providerCode?: string;
+      providerMessage?: string;
+    },
+  ) {
+    super(message);
+    this.name = "DokuCheckoutError";
+  }
+}
+
+export function normalizeDokuPhone(value: string) {
+  const digits = value.replace(/\D/g, "");
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
 export function digestBody(rawBody: string) {
   return createHash("sha256").update(rawBody).digest("base64");
 }
@@ -69,7 +93,7 @@ export function buildDokuCheckoutBody(input: {
       id: input.customer.id,
       name: input.customer.name,
       email: input.customer.email,
-      phone: input.customer.phone,
+      phone: normalizeDokuPhone(input.customer.phone),
     },
     additional_info: {
       override_notification_url: `${input.publicAppUrl}/api/payments/doku/webhook`,
@@ -108,6 +132,14 @@ function getDokuErrorMessages(payload: Record<string, any>) {
   const fallback = payload?.error?.message || payload?.response?.message;
   if (details.length) return details;
   return fallback ? [String(fallback)] : [];
+}
+
+function getDokuProviderCode(payload: Record<string, any>) {
+  const first = Array.isArray(payload?.message) ? payload.message[0] : undefined;
+  if (first && typeof first === "object" && first.code) return String(first.code);
+  return payload?.error?.code || payload?.response?.code || payload?.code
+    ? String(payload?.error?.code || payload?.response?.code || payload?.code)
+    : undefined;
 }
 
 export async function createDokuCheckout(input: {
@@ -151,14 +183,21 @@ export async function createDokuCheckout(input: {
   const payload = (await response.json().catch(() => ({}))) as Record<string, any>;
   if (!response.ok || !payload?.response?.payment?.url) {
     const messages = getDokuErrorMessages(payload);
+    const providerCode = getDokuProviderCode(payload);
     console.error("[DOKU] Checkout API rejected request", {
       environment: input.settings.environment,
       httpStatus: response.status,
       requestId,
+      providerCode,
       messages,
     });
-    const detail = messages.length ? `: ${messages.join("; ")}` : "";
-    throw new Error(`DOKU checkout gagal (${response.status})${detail}`);
+    throw new DokuCheckoutError("Checkout DOKU belum berhasil dibuat.", {
+      environment: input.settings.environment,
+      httpStatus: response.status,
+      requestId,
+      providerCode,
+      providerMessage: messages.join("; ") || undefined,
+    });
   }
   return {
     paymentUrl: String(payload.response.payment.url),
@@ -168,6 +207,7 @@ export async function createDokuCheckout(input: {
     expiresAt:
       parseDokuExpiry(payload.response.payment.expired_date) ||
       new Date(Date.now() + input.settings.paymentDueMinutes * 60_000),
+    requestId,
   };
 }
 

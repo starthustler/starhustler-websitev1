@@ -3,6 +3,7 @@ import {
   buildDokuCheckoutBody,
   createDokuSignature,
   digestBody,
+  normalizeDokuPhone,
   parseDokuExpiry,
   verifyDokuNotification,
 } from "./integrations/doku.js";
@@ -79,5 +80,11 @@ describe("DOKU signature", () => {
       "2024-07-12T03:47:11.000Z",
     );
     expect(parseDokuExpiry("not-a-date")).toBeUndefined();
+  });
+
+  it("normalizes Indonesian phone numbers for DOKU", () => {
+    expect(normalizeDokuPhone("0811 1602-028")).toBe("628111602028");
+    expect(normalizeDokuPhone("+62 811 1602 028")).toBe("628111602028");
+    expect(normalizeDokuPhone("8111602028")).toBe("628111602028");
   });
 });

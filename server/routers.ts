@@ -399,6 +399,9 @@ export const appRouter = router({
       .input(z.object({ to: z.string().email().max(320) }))
       .mutation(({ input }) => sendResendTest(input.to)),
     orders: adminProcedure.query(() => db.listOrdersForAdmin()),
+    paymentLogs: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(250).default(100) }).optional())
+      .query(({ input }) => db.listPaymentActivityForAdmin(input?.limit || 100)),
     resendEnrollmentEmail: adminProcedure
       .input(z.object({ orderId: z.string().uuid() }))
       .mutation(({ input }) => resendEnrollmentConfirmation(input.orderId)),
