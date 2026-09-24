@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Save, Send } from "lucide-react";
+import { ClipboardPaste, Eye, EyeOff, Save, Send } from "lucide-react";
 import AdminShell from "../components/admin/AdminShell.jsx";
 import { trpc } from "../lib/trpc";
+import { extractDokuCredential } from "@shared/dokuCredentials";
 
 const defaultEvents = {
   pageView: true,
@@ -41,6 +42,7 @@ export default function AdminSettingsPage() {
     resendReplyTo: "",
   });
   const [resendTestTo, setResendTestTo] = useState("");
+  const [showDokuSecret, setShowDokuSecret] = useState(false);
 
   useEffect(() => {
     if (query.data)
@@ -138,6 +140,67 @@ export default function AdminSettingsPage() {
       />
     </label>
   );
+  const pasteDokuCredential = async (key, kind, label) => {
+    try {
+      const clipboardValue = await navigator.clipboard.readText();
+      const credential = extractDokuCredential(clipboardValue, kind);
+      if (!credential) {
+        setMessage(`Clipboard tidak berisi ${label} yang valid. Klik tombol Copy di dashboard DOKU, lalu coba lagi.`);
+        return;
+      }
+      setCommerce(current => ({
+        ...current,
+        [key]: credential,
+        ...(key === "dokuClientId" ? { clearDokuClientId: false } : { clearDokuSecretKey: false }),
+      }));
+      setMessage(`${label} berhasil ditempel. Klik Simpan untuk menyimpannya.`);
+    } catch {
+      setMessage(`Browser tidak mengizinkan akses clipboard. Klik kolom ${label}, lalu gunakan Ctrl+V.`);
+    }
+  };
+  const dokuCredentialField = ({ keyName, label, kind, configured, secret = false }) => (
+    <div className="admin-field">
+      <label htmlFor={keyName}>{configured ? `Ganti ${label} (opsional)` : label}</label>
+      <div className="admin-credential-row">
+        <input
+          id={keyName}
+          type={secret && !showDokuSecret ? "password" : "text"}
+          value={commerce[keyName] || ""}
+          autoComplete="off"
+          spellCheck="false"
+          placeholder={configured ? "Kosongkan jika tidak ingin mengganti" : `Tempel ${label} dari DOKU`}
+          onChange={event => setCommerce(current => ({
+            ...current,
+            [keyName]: event.target.value,
+            ...(keyName === "dokuClientId" ? { clearDokuClientId: false } : { clearDokuSecretKey: false }),
+          }))}
+          onBlur={event => {
+            const cleaned = extractDokuCredential(event.target.value, kind);
+            if (cleaned) setCommerce(current => ({ ...current, [keyName]: cleaned }));
+          }}
+        />
+        {secret && (
+          <button
+            type="button"
+            className="admin-input-action"
+            aria-label={showDokuSecret ? "Sembunyikan Secret Key" : "Tampilkan Secret Key"}
+            title={showDokuSecret ? "Sembunyikan" : "Tampilkan"}
+            onClick={() => setShowDokuSecret(current => !current)}
+          >
+            {showDokuSecret ? <EyeOff size={17} /> : <Eye size={17} />}
+          </button>
+        )}
+        <button
+          type="button"
+          className="admin-input-action admin-input-action--paste"
+          onClick={() => pasteDokuCredential(keyName, kind, label)}
+        >
+          <ClipboardPaste size={17} /> Tempel
+        </button>
+      </div>
+      <small>Ctrl+V tetap dapat digunakan langsung di kolom ini.</small>
+    </div>
+  );
   const last = query.data?.metaLastServerEvent;
 
   return (
@@ -175,6 +238,12 @@ export default function AdminSettingsPage() {
             <h2>Pembayaran</h2>
             <p>URL ini dipakai kelas yang mengaktifkan central payment.</p>
           </div>
+          <div className="admin-doku-guide">
+            <strong>Salin dari DOKU Dashboard → API Keys</strong>
+            <div><code>Client ID</code><span>→</span><span>DOKU Client ID</span></div>
+            <div><code>Active Secret Key</code><span>→</span><span>DOKU Secret Key</span></div>
+            <p><strong>API Key, DOKU Public Key, dan Merchant Public Key tidak perlu diisi</strong> untuk Direct API yang digunakan website ini.</p>
+          </div>
           <div className="admin-form-grid">
             {field("paymentProvider", "Provider")}
             {field(
@@ -197,8 +266,8 @@ export default function AdminSettingsPage() {
                 <option value="production">Production</option>
               </select>
             </label>
-            {commerceField("dokuClientId", commerceQuery.data?.dokuClientIdConfigured ? "Ganti DOKU Client ID (opsional)" : "DOKU Client ID", "password")}
-            {commerceField("dokuSecretKey", commerceQuery.data?.dokuSecretKeyConfigured ? "Ganti DOKU Secret Key (opsional)" : "DOKU Secret Key", "password")}
+            {dokuCredentialField({ keyName: "dokuClientId", label: "DOKU Client ID", kind: "clientId", configured: commerceQuery.data?.dokuClientIdConfigured })}
+            {dokuCredentialField({ keyName: "dokuSecretKey", label: "DOKU Secret Key", kind: "secretKey", configured: commerceQuery.data?.dokuSecretKeyConfigured, secret: true })}
             {commerceField("dokuPaymentDueMinutes", "Payment Due (menit)", "number")}
             <div className="admin-field"><span>Status DOKU</span><p>Client ID: <strong>{commerceQuery.data?.dokuClientIdConfigured ? "Terpasang" : "Belum"}</strong></p><p>Secret: <strong>{commerceQuery.data?.dokuSecretKeyConfigured ? "Terpasang" : "Belum"}</strong></p><p>Webhook: <code>/api/payments/doku/webhook</code></p></div>
             <label className="admin-toggle"><input type="checkbox" checked={commerce.clearDokuClientId} onChange={e => setCommerce({ ...commerce, clearDokuClientId: e.target.checked })} /><span>Hapus Client ID tersimpan</span></label>
