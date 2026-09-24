@@ -151,7 +151,7 @@ export async function createRegistrationCheckout(input: {
       message: credentialHint
         ? "Periksa apakah Client ID, Active Secret Key, dan pilihan Sandbox/Production sudah sesuai."
         : diagnostic?.httpStatus === 500
-          ? "DOKU mengalami kesalahan internal meskipun request sudah memakai format dasar resmi. Gunakan Request ID ini saat menghubungi DOKU dan pastikan produk DOKU Checkout aktif pada akun Production."
+          ? "DOKU mengembalikan kesalahan internal setelah menerima request Checkout resmi (termasuk timestamp tanpa milidetik). Pastikan produk DOKU Checkout dan minimal satu channel pembayaran sudah aktif pada akun ini; gunakan Request ID saat menghubungi DOKU."
           : "Checkout belum berhasil. Periksa konfigurasi DOKU dan coba kembali.",
       httpStatus: diagnostic?.httpStatus,
       providerCode: diagnostic?.providerCode,
