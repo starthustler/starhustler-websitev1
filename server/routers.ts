@@ -409,6 +409,7 @@ export const appRouter = router({
         await reconcileRecentPendingOrders(5);
         return db.listOrdersForAdmin(input?.page || 1, input?.pageSize || 25);
       }),
+    exportOrders: adminProcedure.query(() => db.listOrdersForExport()),
     paymentLogs: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(250).default(100) }).optional())
       .query(({ input }) => db.listPaymentActivityForAdmin(input?.limit || 100)),
@@ -476,6 +477,21 @@ export const appRouter = router({
           content: normalizeClassContent(input.content),
         })
       ),
+    updateSlug: adminProcedure
+      .input(z.object({ id: z.number().int().positive(), slug: slugSchema }))
+      .mutation(async ({ input }) => {
+        try {
+          return await db.updateClassSlug(input.id, input.slug);
+        } catch (error) {
+          if (error instanceof Error && error.message === "SLUG_ALREADY_EXISTS") {
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: "Slug sudah digunakan oleh kelas lain.",
+            });
+          }
+          throw error;
+        }
+      }),
     setStatus: adminProcedure
       .input(
         z.object({

@@ -1,8 +1,15 @@
-import { Copy, Edit3, Eye, Plus, Send, Undo2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Copy, Edit3, Eye, Plus, Send, Undo2, X } from "lucide-react";
 import AdminShell from "../components/admin/AdminShell.jsx";
 import { trpc } from "../lib/trpc";
 
+const slugify = value =>
+  value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
 export default function AdminClassesPage() {
+  const [editingId, setEditingId] = useState(null);
+  const [draftSlug, setDraftSlug] = useState("");
+  const [slugError, setSlugError] = useState("");
   const utils = trpc.useUtils();
   const query = trpc.classAdmin.list.useQuery(undefined, { retry: false });
   const status = trpc.classAdmin.setStatus.useMutation({
@@ -11,6 +18,33 @@ export default function AdminClassesPage() {
   const duplicate = trpc.classAdmin.duplicate.useMutation({
     onSuccess: () => utils.classAdmin.list.invalidate(),
   });
+  const updateSlug = trpc.classAdmin.updateSlug.useMutation({
+    onSuccess: async () => {
+      await utils.classAdmin.list.invalidate();
+      setEditingId(null);
+      setDraftSlug("");
+      setSlugError("");
+    },
+    onError: error => setSlugError(error.message),
+  });
+  const beginSlugEdit = item => {
+    setEditingId(item.id);
+    setDraftSlug(item.slug);
+    setSlugError("");
+  };
+  const cancelSlugEdit = () => {
+    setEditingId(null);
+    setDraftSlug("");
+    setSlugError("");
+  };
+  const saveSlug = item => {
+    const slug = slugify(draftSlug);
+    if (!slug) {
+      setSlugError("Slug tidak boleh kosong.");
+      return;
+    }
+    updateSlug.mutate({ id: item.id, slug });
+  };
   return (
     <AdminShell>
       <div className="admin-title-row">
@@ -49,7 +83,37 @@ export default function AdminClassesPage() {
                   <strong>{item.name}</strong>
                   {item.featured && <small>Featured</small>}
                 </td>
-                <td>/kelas/{item.slug}</td>
+                <td>
+                  {editingId === item.id ? (
+                    <div className="admin-slug-editor">
+                      <div className="admin-slug-editor__field">
+                        <span>/kelas/</span>
+                        <input
+                          aria-label={`Slug ${item.name}`}
+                          autoFocus
+                          value={draftSlug}
+                          onChange={event => {
+                            setDraftSlug(slugify(event.target.value));
+                            setSlugError("");
+                          }}
+                          onKeyDown={event => {
+                            if (event.key === "Enter") saveSlug(item);
+                            if (event.key === "Escape") cancelSlugEdit();
+                          }}
+                        />
+                      </div>
+                      <div className="admin-slug-editor__actions">
+                        <button type="button" aria-label={`Simpan slug ${item.name}`} disabled={!draftSlug || updateSlug.isPending} onClick={() => saveSlug(item)}><Check size={15}/></button>
+                        <button type="button" aria-label={`Batal edit slug ${item.name}`} onClick={cancelSlugEdit}><X size={15}/></button>
+                      </div>
+                      {slugError && <small className="admin-slug-editor__error">{slugError}</small>}
+                    </div>
+                  ) : (
+                    <button className="admin-slug-trigger" type="button" onClick={() => beginSlugEdit(item)} title="Edit slug">
+                      <span>/kelas/{item.slug}</span><Edit3 size={14}/>
+                    </button>
+                  )}
+                </td>
                 <td>
                   <span className={`admin-status admin-status--${item.status}`}>
                     {item.status}

@@ -28,6 +28,7 @@ export default function ClassCheckoutSection({ record, slug, content }) {
               label={shared.pricing.priceLabel}
               sellingPrice={shared.pricing.sellingPrice}
               originalPrice={shared.pricing.originalPrice}
+              promoLabel={shared.pricing.promoLabel}
               variant="card"
             />
             <EventInfo

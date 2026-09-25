@@ -322,6 +322,7 @@ export default function ManagedClassPage({ slug }) {
           <PriceDisplay
             sellingPrice={shared.pricing.sellingPrice}
             originalPrice={shared.pricing.originalPrice}
+            promoLabel={shared.pricing.promoLabel}
             variant="section"
           />
           <div className="class-detail-actions">

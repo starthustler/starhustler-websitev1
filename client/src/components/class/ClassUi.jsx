@@ -6,14 +6,21 @@ export function PriceDisplay({
   sellingPrice,
   originalPrice = 0,
   label = "",
+  promoLabel = "",
   variant = "section",
   className = "",
 }) {
+  const discounted = originalPrice > sellingPrice;
   return (
     <div className={`price-display price-display--${variant} ${className}`.trim()}>
       {label && <span className="price-display__label">{label}</span>}
-      <strong>{formatRupiah(sellingPrice)}</strong>
-      {originalPrice > sellingPrice && <s>{formatRupiah(originalPrice)}</s>}
+      {discounted && (
+        <span className="price-display__original">
+          {variant !== "floating" && "Harga normal "}<s>{formatRupiah(originalPrice)}</s>
+        </span>
+      )}
+      <strong className="price-display__selling">{formatRupiah(sellingPrice)}</strong>
+      {promoLabel && <span className="price-display__promo">{promoLabel}</span>}
     </div>
   );
 }

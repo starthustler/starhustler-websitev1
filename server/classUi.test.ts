@@ -55,7 +55,7 @@ describe("class landing reusable UI", () => {
       h(
         React.Fragment,
         null,
-        h(PriceDisplay, { sellingPrice: 10_000, originalPrice: 20_000 }),
+        h(PriceDisplay, { sellingPrice: 10_000, originalPrice: 20_000, promoLabel: "Hemat Rp10.000" }),
         h(EventInfo, {
           items: [{ key: "schedule", value: "Jumat, 19.00 WIB" }],
         }),
@@ -66,6 +66,10 @@ describe("class landing reusable UI", () => {
 
     expect(html).toContain("Rp10.000");
     expect(html).toContain("Rp20.000");
+    expect(html).toContain("Harga normal");
+    expect(html).toContain("Hemat Rp10.000");
+    expect(html.indexOf("Rp20.000")).toBeLessThan(html.indexOf("Rp10.000"));
+    expect(html.indexOf("Rp10.000")).toBeLessThan(html.indexOf("Hemat Rp10.000"));
     expect(html).toContain("Jumat, 19.00 WIB");
     expect(html).toContain("Akses rekaman kelas");
     expect(html).toContain('name="email"');

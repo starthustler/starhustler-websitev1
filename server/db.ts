@@ -571,6 +571,34 @@ export async function updateClass(
   return updated;
 }
 
+export async function updateClassSlug(
+  id: number,
+  slug: string
+): Promise<ClassRecord> {
+  const current = await getClassById(id);
+  if (!current) throw new Error("Class not found");
+  const existing = await getClassBySlug(slug);
+  if (existing && existing.id !== id) throw new Error("SLUG_ALREADY_EXISTS");
+  try {
+    return await updateClass(id, {
+      ...current,
+      slug,
+      content: {
+        ...current.content,
+        seo: {
+          ...current.content.seo,
+          canonicalUrl: `https://www.starthustler.com/kelas/${slug}`,
+        },
+      },
+    });
+  } catch (error) {
+    if (typeof error === "object" && error && "code" in error && error.code === "23505") {
+      throw new Error("SLUG_ALREADY_EXISTS");
+    }
+    throw error;
+  }
+}
+
 export async function deleteClass(id: number): Promise<void> {
   const db = await requireClassDb();
   await db.delete(classes).where(eq(classes.id, id));
@@ -1172,4 +1200,30 @@ export async function listOrdersForAdmin(page = 1, pageSize = 25) {
       totalPages: Math.max(1, Math.ceil(total / safePageSize)),
     },
   };
+}
+
+export async function listOrdersForExport() {
+  const db = await requireClassDb();
+  const rows = await db.select({
+    order: classOrders,
+    student: students,
+    classRow: classes,
+  })
+    .from(classOrders)
+    .innerJoin(students, eq(classOrders.studentId, students.id))
+    .innerJoin(classes, eq(classOrders.classId, classes.id))
+    .orderBy(desc(classOrders.createdAt));
+
+  return rows.map(({ order, student, classRow }) => ({
+    orderId: order.invoiceNumber,
+    name: student.name,
+    email: student.email,
+    phone: student.phone,
+    className: classRow.name,
+    amount: order.amount,
+    paymentStatus: order.status,
+    paymentMethod: "",
+    createdAt: order.createdAt,
+    paidAt: order.paidAt,
+  }));
 }

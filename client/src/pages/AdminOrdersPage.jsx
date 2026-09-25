@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { CheckCircle2, CircleAlert, Clock3, Info, RefreshCw } from "lucide-react";
+import { CheckCircle2, CircleAlert, Clock3, Download, Info, RefreshCw } from "lucide-react";
 import AdminShell from "../components/admin/AdminShell.jsx";
 import { trpc } from "../lib/trpc";
 import { formatRupiah } from "@shared/classContent";
+import { buildOrdersCsv } from "../lib/orderCsv";
 
 const orderLabels = { pending_payment: "Pending", paid: "Berhasil", failed: "Gagal", expired: "Gagal" };
 const activityIcons = { success: CheckCircle2, error: CircleAlert, warning: CircleAlert, info: Info };
@@ -22,12 +23,26 @@ export default function AdminOrdersPage() {
   const utils = trpc.useUtils();
   const orders = trpc.commerceAdmin.orders.useQuery({ page, pageSize: 25 }, { retry: false, refetchInterval: 30_000 });
   const logs = trpc.commerceAdmin.paymentLogs.useQuery({ limit: 25 }, { retry: false, refetchInterval: 30_000 });
+  const exportOrders = trpc.commerceAdmin.exportOrders.useQuery(undefined, { enabled: false, retry: false });
   const resend = trpc.commerceAdmin.resendEnrollmentEmail.useMutation({ onSuccess: () => utils.commerceAdmin.orders.invalidate() });
   const refresh = () => { orders.refetch(); logs.refetch(); };
   const summary = orders.data?.summary || { paid: 0, pending: 0, failed: 0 };
+  const downloadOrders = async () => {
+    const result = await exportOrders.refetch();
+    if (!result.data) return;
+    const blob = new Blob([buildOrdersCsv(result.data)], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `starthustler-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
 
   return <AdminShell>
-    <div className="admin-title-row"><div><p className="eyebrow">Commerce</p><h1>Orders & Pembayaran</h1><p>Pantau peserta, pembayaran DOKU, dan email konfirmasi dari satu halaman.</p></div><button className="button button--secondary" type="button" onClick={refresh} disabled={orders.isFetching || logs.isFetching}><RefreshCw size={17}/> Perbarui</button></div>
+    <div className="admin-title-row"><div><p className="eyebrow">Commerce</p><h1>Orders & Pembayaran</h1><p>Pantau peserta, pembayaran DOKU, dan email konfirmasi dari satu halaman.</p></div><div className="admin-title-actions"><button className="button button--secondary" type="button" onClick={downloadOrders} disabled={exportOrders.isFetching}><Download size={17}/> {exportOrders.isFetching ? "Menyiapkan…" : "Export Orders"}</button><button className="button button--secondary" type="button" onClick={refresh} disabled={orders.isFetching || logs.isFetching}><RefreshCw size={17}/> Perbarui</button></div></div>
 
     <section className="order-summary-grid" aria-label="Ringkasan pembayaran">
       <article className="order-summary-card order-summary-card--paid"><CheckCircle2/><span>Pembayaran Berhasil</span><strong>{summary.paid}</strong></article>
@@ -37,15 +52,19 @@ export default function AdminOrdersPage() {
 
     <section className="admin-panel"><div className="admin-panel__heading"><h2>Daftar Order</h2><p>Menampilkan maksimal 25 transaksi per halaman. Status pending direkonsiliasi otomatis dengan DOKU.</p></div>
       {orders.isError && <p className="admin-alert admin-alert--error">Order belum dapat dimuat. Coba klik Perbarui.</p>}
-      <div className="admin-table-wrap"><table className="admin-table admin-orders-table"><thead><tr><th>Order</th><th>Peserta</th><th>Kelas</th><th>Nominal</th><th>Pembayaran</th><th>Email</th></tr></thead><tbody>
+      {exportOrders.isError && <p className="admin-alert admin-alert--error">Export belum dapat dibuat. Silakan coba kembali.</p>}
+      <div className="admin-table-wrap"><table className="admin-table admin-orders-table"><thead><tr><th>Order ID</th><th>Nama</th><th>Email</th><th>Nomor HP</th><th>Kelas</th><th>Nominal</th><th>Pembayaran</th><th>Waktu Order</th><th>Status Email</th></tr></thead><tbody>
         {orders.data?.items.map(row => <tr key={row.id}>
-          <td data-label="Order"><strong>{row.invoiceNumber}</strong><small>{new Date(row.createdAt).toLocaleString("id-ID")}</small></td>
-          <td data-label="Peserta"><strong>{row.student.name}</strong><small>{row.student.email}<br />{row.student.phone}</small></td>
+          <td data-label="Order ID"><strong>{row.invoiceNumber}</strong></td>
+          <td data-label="Nama"><strong>{row.student.name}</strong></td>
+          <td data-label="Email"><a className="admin-order-contact" href={`mailto:${row.student.email}`}>{row.student.email}</a></td>
+          <td data-label="Nomor HP"><a className="admin-order-contact" href={`tel:${row.student.phone}`}>{row.student.phone}</a></td>
           <td data-label="Kelas">{row.className}</td><td data-label="Nominal">{formatRupiah(row.amount)}</td>
           <td data-label="Pembayaran"><span className={`order-status order-status--${row.status}`}>{orderLabels[row.status] || row.status}</span>{row.status === "pending_payment" && row.paymentUrl && <a className="admin-inline-action" href={row.paymentUrl} target="_blank" rel="noreferrer">Buka checkout</a>}</td>
-          <td data-label="Email"><EmailStatus delivery={row.emailDelivery}/>{row.status === "paid" && <button className="admin-inline-action" type="button" disabled={resend.isPending} onClick={() => resend.mutate({ orderId: row.publicId })}>Kirim ulang akses</button>}</td>
+          <td data-label="Waktu Order"><time>{new Date(row.createdAt).toLocaleString("id-ID")}</time>{row.paidAt && <small>Paid: {new Date(row.paidAt).toLocaleString("id-ID")}</small>}</td>
+          <td data-label="Status Email"><EmailStatus delivery={row.emailDelivery}/>{row.status === "paid" && <button className="admin-inline-action" type="button" disabled={resend.isPending} onClick={() => resend.mutate({ orderId: row.publicId })}>Kirim ulang akses</button>}</td>
         </tr>)}
-        {!orders.isLoading && !orders.data?.items.length && <tr><td colSpan="6">Belum ada order.</td></tr>}
+        {!orders.isLoading && !orders.data?.items.length && <tr><td colSpan="9">Belum ada order.</td></tr>}
       </tbody></table></div>
       {orders.data && orders.data.pagination.totalPages > 1 && <nav className="admin-pagination" aria-label="Pagination order"><button type="button" disabled={page <= 1} onClick={() => setPage(value => value - 1)}>Sebelumnya</button><span>Halaman {page} dari {orders.data.pagination.totalPages}</span><button type="button" disabled={page >= orders.data.pagination.totalPages} onClick={() => setPage(value => value + 1)}>Berikutnya</button></nav>}
     </section>
