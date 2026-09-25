@@ -236,11 +236,30 @@ export async function ensureClassCmsSchema(): Promise<void> {
         { key: "doku_secret_key", value: "" },
         { key: "doku_payment_due_minutes", value: "60" },
         { key: "resend_api_key", value: "" },
-        { key: "resend_from_name", value: "Kelas StartHustler" },
-        { key: "resend_from_email", value: "kelas@mail.starthustler.com" },
+        { key: "resend_from_name", value: "Starthustler" },
+        { key: "resend_from_email", value: "hello@starthustler.com" },
         { key: "resend_reply_to", value: "" },
       ])
       .onConflictDoNothing({ target: siteSettings.key });
+
+    await db
+      .update(siteSettings)
+      .set({ value: "Starthustler", updatedAt: new Date() })
+      .where(
+        and(
+          eq(siteSettings.key, "resend_from_name"),
+          eq(siteSettings.value, "Kelas StartHustler")
+        )
+      );
+    await db
+      .update(siteSettings)
+      .set({ value: "hello@starthustler.com", updatedAt: new Date() })
+      .where(
+        and(
+          eq(siteSettings.key, "resend_from_email"),
+          eq(siteSettings.value, "kelas@mail.starthustler.com")
+        )
+      );
 
     const seedMarker = await db
       .select({ key: siteSettings.key })
@@ -834,8 +853,8 @@ export async function getCommerceSettings() {
     },
     resend: {
       apiKey: process.env.RESEND_API_KEY || decryptSecret(values.resend_api_key),
-      fromName: values.resend_from_name || "Kelas StartHustler",
-      fromEmail: values.resend_from_email || "kelas@mail.starthustler.com",
+      fromName: values.resend_from_name || "Starthustler",
+      fromEmail: values.resend_from_email || "hello@starthustler.com",
       replyTo: values.resend_reply_to || "",
     },
   };

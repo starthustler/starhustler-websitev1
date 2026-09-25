@@ -37,8 +37,8 @@ export default function AdminSettingsPage() {
     dokuPaymentDueMinutes: 60,
     resendApiKey: "",
     clearResendApiKey: false,
-    resendFromName: "Kelas StartHustler",
-    resendFromEmail: "kelas@mail.starthustler.com",
+    resendFromName: "Starthustler",
+    resendFromEmail: "hello@starthustler.com",
     resendReplyTo: "",
   });
   const [resendTestTo, setResendTestTo] = useState("");
