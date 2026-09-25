@@ -216,6 +216,8 @@ button { border:0; }
 .class-checkout-card__product span,.class-checkout-card__product small { color:rgba(255,255,255,.72); display:block; font-size:13px; font-weight:700; }
 .class-checkout-card__product h3 { font-family:Poppins,sans-serif; font-size:24px; margin:7px 0; }
 .class-checkout-card__product strong { color:#fff; display:block; font-family:Poppins,sans-serif; font-size:34px; margin-bottom:5px; }
+.class-checkout-card__product .price-display { align-items:center; text-align:center; }
+.class-checkout-card__product .event-info--compact { text-align:center; width:100%; }
 .class-checkout-card__heading h2 { margin-top:4px; }
 .payment-status-shell { align-items:center; display:flex; justify-content:center; min-height:650px; padding:70px 20px; }
 .payment-status-card { max-width:590px; text-align:center; width:100%; }
