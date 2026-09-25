@@ -212,7 +212,7 @@ button { border:0; }
 .class-checkout-section { background:#f3f6fc; }
 .class-checkout-section__layout { align-items:center; display:flex; justify-content:center; padding-bottom:150px; padding-top:100px; }
 .class-checkout-card { max-width:620px; scroll-margin-top:112px; width:100%; }
-.class-checkout-card__product { background:var(--navy); color:#fff; margin:-38px -38px 5px; padding:28px 38px; }
+.class-checkout-card__product { background:var(--navy); color:#fff; margin:-38px -38px 5px; padding:28px 38px; text-align:center; }
 .class-checkout-card__product span,.class-checkout-card__product small { color:rgba(255,255,255,.72); display:block; font-size:13px; font-weight:700; }
 .class-checkout-card__product h3 { font-family:Poppins,sans-serif; font-size:24px; margin:7px 0; }
 .class-checkout-card__product strong { color:#fff; display:block; font-family:Poppins,sans-serif; font-size:34px; margin-bottom:5px; }

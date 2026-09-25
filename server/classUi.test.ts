@@ -85,6 +85,7 @@ describe("class landing reusable UI", () => {
     expect(css).toMatch(/\.button__label\s*\{[^}]*white-space:nowrap/s);
     expect(css).toContain("@media (max-width: 460px)");
     expect(css).toMatch(/\.class-checkout-card \.button\s*\{[^}]*font-size: 13px/s);
+    expect(css).toMatch(/\.class-checkout-card__product\s*\{[^}]*text-align:center;/s);
     expect(css).toMatch(/\.class-checkout-card__product \.price-display\s*\{[^}]*align-items:center;[^}]*text-align:center;/s);
     expect(css).toMatch(/\.class-checkout-card__product \.event-info--compact\s*\{[^}]*text-align:center;[^}]*width:100%;/s);
   });
