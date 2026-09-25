@@ -129,7 +129,6 @@ export default function ManagedClassPage({ slug }) {
     currency: "IDR",
   };
   const handlePaymentClick = event => {
-    if (event.defaultPrevented) return;
     if (
       event.button !== 0 ||
       event.metaKey ||

@@ -82,4 +82,14 @@ describe("class landing reusable UI", () => {
     expect(css).toContain("@media (max-width: 460px)");
     expect(css).toMatch(/\.class-checkout-card \.button\s*\{[^}]*font-size: 13px/s);
   });
+
+  it("keeps registration anchor scrolling active when another listener prevents the default link action", () => {
+    const source = readFileSync(
+      new URL("../client/src/pages/ManagedClassPage.jsx", import.meta.url),
+      "utf8"
+    );
+
+    expect(source).toContain('document.getElementById("daftar-kelas")?.scrollIntoView');
+    expect(source).not.toContain("if (event.defaultPrevented) return;");
+  });
 });
