@@ -109,33 +109,41 @@ export async function createRegistrationCheckout(input: {
       publicAppUrl: publicAppUrl(),
     });
     await db.setOrderCheckout(order.id, checkout);
-    await db.recordPaymentActivity({
-      orderId: order.id,
-      invoiceNumber: order.invoiceNumber,
-      environment: settings.doku.environment,
-      eventType: "checkout_created",
-      status: "success",
-      title: "Link pembayaran berhasil dibuat",
-      message: "DOKU menerima transaksi dan mengembalikan link pembayaran.",
-      httpStatus: 200,
-      requestId: checkout.requestId,
-    });
-    const detail = await db.getOrderDetailsByPublicId(order.publicId);
-    if (detail) {
-      await sendOrderEmail(
-        "payment_link",
-        detail,
-        paymentEmailHtml({
-          name: student.name,
-          className: classRecord.name,
+    // The DOKU URL is persisted. Return it immediately instead of making the
+    // customer wait for admin logging and the optional payment-link email.
+    void (async () => {
+      try {
+        await db.recordPaymentActivity({
+          orderId: order.id,
           invoiceNumber: order.invoiceNumber,
-          amountLabel: formatRupiah(amount),
-          paymentUrl: checkout.paymentUrl,
-          expiresLabel: checkout.expiresAt.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
-        }),
-        `Selesaikan pembayaran ${classRecord.name}`
-      );
-    }
+          environment: settings.doku.environment,
+          eventType: "checkout_created",
+          status: "success",
+          title: "Link pembayaran berhasil dibuat",
+          message: "DOKU menerima transaksi dan mengembalikan link pembayaran.",
+          httpStatus: 200,
+          requestId: checkout.requestId,
+        });
+        const detail = await db.getOrderDetailsByPublicId(order.publicId);
+        if (detail) {
+          await sendOrderEmail(
+            "payment_link",
+            detail,
+            paymentEmailHtml({
+              name: student.name,
+              className: classRecord.name,
+              invoiceNumber: order.invoiceNumber,
+              amountLabel: formatRupiah(amount),
+              paymentUrl: checkout.paymentUrl,
+              expiresLabel: checkout.expiresAt.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" }),
+            }),
+            `Selesaikan pembayaran ${classRecord.name}`
+          );
+        }
+      } catch (error) {
+        console.error("[Checkout] Post-response follow-up failed", error);
+      }
+    })();
     return {
       orderId: order.publicId,
       invoiceNumber: order.invoiceNumber,

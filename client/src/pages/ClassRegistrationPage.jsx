@@ -44,7 +44,7 @@ export default function ClassRegistrationPage({ slug }) {
               <label><span>Nomor WhatsApp</span><input name="phone" type="tel" value={form.phone} onChange={update} required minLength={8} autoComplete="tel" placeholder="08xxxxxxxxxx" /></label>
               {checkout.error && <p className="registration-error">{checkout.error.message}</p>}
               <button className="button button--primary" disabled={checkout.isPending}>
-                <LockKeyhole size={17} /> {checkout.isPending ? "Membuat checkout…" : "Lanjut ke Pembayaran"}
+                <LockKeyhole size={17} /> {checkout.isPending ? "Menyiapkan pembayaran…" : "Lanjut ke Pembayaran"}
               </button>
               <small>Harga diambil langsung dari sistem StartHustler dan tidak dapat diubah dari browser.</small>
             </form>
