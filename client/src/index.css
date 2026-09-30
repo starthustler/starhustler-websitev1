@@ -155,7 +155,7 @@ button { border:0; }
 .class-detail-note { font-size: 16px !important; margin: 0 auto; max-width: 950px; }
 .class-detail-mentor { background: #fff; display: grid; gap: 65px; grid-template-columns: 1.1fr .9fr; }
 .class-detail-mentor__card { background: #e9f0ff; padding: 28px; }
-.class-detail-mentor__card img { height: 335px; object-fit: cover; width: 100%; }
+.class-detail-mentor__card img { aspect-ratio: 16 / 9; background: #e9f0ff; height: auto; object-fit: contain; width: 100%; }
 .class-detail-mentor__card h3 { color: var(--navy); margin: 21px 0 0; }
 .class-detail-benefits { background: var(--navy); color: #fff; padding: 100px 0; }
 .class-detail-benefits h2 { max-width: 600px; }
