@@ -257,7 +257,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
       "Angka ini menunjukkan bahwa produk sederhana pun bisa menemukan pasar yang besar ketika masalahnya nyata dan solusinya mudah digunakan.",
     ],
     highlight: "1 juta lebih download",
-    imageUrl: "/assets/starhustler-japanese-male-office_b8ef0e79.webp",
+    imageUrl: "/assets/starhustler-portrait-section-1.svg",
   },
   calculation: {
     title: "Berapa potensi penghasilannya?",
