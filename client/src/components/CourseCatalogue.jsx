@@ -5,7 +5,7 @@ import SectionHeading from "./SectionHeading.jsx";
 import { PrimaryButton, SecondaryButton } from "./PrimaryButton.jsx";
 import { trpc } from "../lib/trpc";
 
-const COURSE_IMAGE = "/assets/starhustler-course-creators_4af6efe2.webp";
+const COURSE_IMAGE = "/assets/starhustler-solopreneur-webinar-12-october-2026.svg";
 export default function CourseCatalogue({ standalone = false }) {
   const query = trpc.classes.list.useQuery(undefined, {
     retry: 1,
