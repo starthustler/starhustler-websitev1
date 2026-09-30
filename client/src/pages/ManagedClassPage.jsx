@@ -194,7 +194,7 @@ export default function ManagedClassPage({ slug }) {
         <div className="class-detail-split__media">
           <img
             src={
-              c.slug === "kelas-solopreneur"
+              slug === "kelas-solopreneur"
                 ? "/assets/starhustler-portrait-section-1.svg"
                 : c.story.imageUrl
             }
