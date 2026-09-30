@@ -208,7 +208,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
     description:
       "Selama dua jam, kamu akan diajak melihat cara seorang solopreneur menemukan peluang dari masalah sehari-hari, mengubahnya menjadi ide aplikasi, lalu mulai membangunnya dengan bantuan AI.",
     supportingText: "",
-    imageUrl: "/assets/starhustler-course-creators_4af6efe2.webp",
+    imageUrl: "/assets/starhustler-solopreneur-webinar-12-october-2026.webp",
     supportingImageUrl: "",
     secondaryCtaLabel: "",
     secondaryCtaUrl: "",
