@@ -193,7 +193,11 @@ export default function ManagedClassPage({ slug }) {
         </div>
         <div className="class-detail-split__media">
           <img
-            src={c.story.imageUrl}
+            src={
+              c.slug === "kelas-solopreneur"
+                ? "/assets/starhustler-portrait-section-1.svg"
+                : c.story.imageUrl
+            }
             alt={c.story.title}
             width="1440"
             height="1920"
