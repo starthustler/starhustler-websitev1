@@ -324,7 +324,7 @@ export const DEFAULT_CLASS_CONTENT: ClassContent = {
       "Ebook Memulai Solopreneur membantu kamu memahami langkah awal membangun usaha sendiri, mulai dari menemukan arah, membangun kepercayaan, sampai berani memperkenalkan apa yang kamu kerjakan.",
     supportingText:
       "Kelas membantu kamu melihat cara membuat produk. Ebook membantu kamu membangun kepercayaan dan memperkenalkan produk tersebut kepada orang lain.",
-    imageUrl: "/assets/starhustler-solopreneur-starter-kit-mockup_f0ada996.webp",
+    imageUrl: "/assets/starhustler-ebook-launch-good-enough.svg",
   },
   faq: [
     {
