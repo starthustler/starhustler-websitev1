@@ -31,6 +31,18 @@ const fallbackRecord = slug => {
   return record ? { ...record, id: 0 } : null;
 };
 const active = items => (items || []).filter(item => item.enabled);
+const SOLOPRENEUR_HERO = "/assets/starhustler-solopreneur-webinar-12-october-2026.webp";
+const solopreneurHeroSources = src =>
+  src === SOLOPRENEUR_HERO
+    ? {
+        srcSet: [
+          "/assets/starhustler-solopreneur-webinar-12-october-2026-640.webp 640w",
+          "/assets/starhustler-solopreneur-webinar-12-october-2026-960.webp 960w",
+          `${SOLOPRENEUR_HERO} 1920w`,
+        ].join(", "),
+        sizes: "(max-width: 760px) 100vw, 50vw",
+      }
+    : {};
 
 export default function ManagedClassPage({ slug }) {
   const preview =
@@ -392,6 +404,7 @@ export default function ManagedClassPage({ slug }) {
             <div className="class-detail-hero__art">
               <ClassImage
                 src={c.hero.imageUrl}
+                {...solopreneurHeroSources(c.hero.imageUrl)}
                 alt={c.hero.headline}
                 width="1920"
                 height="1080"

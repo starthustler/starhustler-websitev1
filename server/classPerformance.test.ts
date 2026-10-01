@@ -15,6 +15,24 @@ describe("Solopreneur landing performance safeguards", () => {
     expect(heroImage).toContain('width="1920"');
     expect(heroImage).toContain('height="1080"');
     expect(heroImage).toContain("eager");
+    expect(heroImage).toContain("solopreneurHeroSources");
+  });
+
+  it("loads Google Fonts without blocking the critical CSS path", () => {
+    const css = read("../client/src/index.css");
+    const html = read("../client/index.html");
+
+    expect(css).not.toContain("fonts.googleapis.com");
+    expect(html).toContain('rel="preconnect" href="https://fonts.gstatic.com"');
+    expect(html).toContain('rel="preload"');
+    expect(html).toContain("this.rel='stylesheet'");
+  });
+
+  it("keeps preview instrumentation out of production builds", () => {
+    const config = read("../vite.config.ts");
+
+    expect(config).toContain('command === "serve"');
+    expect(config).toContain("vitePluginManusRuntime()");
   });
 
   it("lazy loads below-fold landing images with dimensions and async decoding", () => {
