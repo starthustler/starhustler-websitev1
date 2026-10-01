@@ -35,6 +35,15 @@ describe("Solopreneur landing performance safeguards", () => {
     expect(config).toContain("vitePluginManusRuntime()");
   });
 
+  it("loads analytics only when production environment values are configured", () => {
+    const html = read("../client/index.html");
+    const main = read("../client/src/main.jsx");
+
+    expect(html).not.toContain("%VITE_ANALYTICS_ENDPOINT%");
+    expect(main).toContain("import.meta.env.VITE_ANALYTICS_ENDPOINT");
+    expect(main).toContain("analyticsEndpoint && analyticsWebsiteId");
+  });
+
   it("lazy loads below-fold landing images with dimensions and async decoding", () => {
     const page = read("../client/src/pages/ManagedClassPage.jsx");
     const belowFoldSources = [
