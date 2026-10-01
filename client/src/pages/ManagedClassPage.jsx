@@ -78,7 +78,15 @@ export default function ManagedClassPage({ slug }) {
   const record = queried || (!preview ? fallbackRecord(slug) : null);
   const loading = preview ? previewQuery.isLoading : publicQuery.isLoading;
   const c = record
-    ? slug === "kelas-solopreneur-salinan-711032"
+    ? slug === "kelas-solopreneur"
+      ? {
+          ...record.content,
+          ebook: {
+            ...record.content.ebook,
+            imageUrl: "/assets/starhustler-ebook-launch-good-enough.svg",
+          },
+        }
+      : slug === "kelas-solopreneur-salinan-711032"
       ? {
           ...record.content,
           mentor: {
