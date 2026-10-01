@@ -380,6 +380,11 @@ button { border:0; }
   font-size: 15px;
   margin: 0;
 }
+/* Skip below-fold paint/layout work until the section approaches the viewport. */
+.class-deferred-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 720px;
+}
 .price-display {
   align-items: flex-start;
   display: flex;

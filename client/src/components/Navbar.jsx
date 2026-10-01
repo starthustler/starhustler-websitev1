@@ -14,7 +14,7 @@ const navItems = [
   ["Blog", "/blog"],
 ];
 
-export default function Navbar() {
+export default function Navbar({ showCta = true }) {
   const [open, setOpen] = useState(false);
   const [location] = useLocation();
 
@@ -29,7 +29,7 @@ export default function Navbar() {
             <a className={location === href ? "is-active" : ""} href={href} key={label}>{label}</a>
           ))}
         </nav>
-        <div className="desktop-cta"><PrimaryButton href="/kelas">Gabung Sekarang</PrimaryButton></div>
+        {showCta && <div className="desktop-cta"><PrimaryButton href="/kelas">Gabung Sekarang</PrimaryButton></div>}
         <button className="menu-toggle" onClick={() => setOpen(!open)} aria-label={open ? "Tutup menu" : "Buka menu"} aria-expanded={open}>
           {open ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -37,7 +37,7 @@ export default function Navbar() {
       {open && (
         <div className="mobile-nav" aria-label="Navigasi seluler">
           {navItems.map(([label, href]) => <a className={location === href ? "is-active" : ""} href={href} onClick={closeMenu} key={label}>{label}</a>)}
-          <PrimaryButton href="/kelas" className="mobile-nav__cta">Gabung Sekarang</PrimaryButton>
+          {showCta && <PrimaryButton href="/kelas" className="mobile-nav__cta">Gabung Sekarang</PrimaryButton>}
         </div>
       )}
     </header>

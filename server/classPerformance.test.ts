@@ -8,36 +8,37 @@ describe("Solopreneur landing performance safeguards", () => {
   it("keeps the hero image eager and high priority with intrinsic dimensions", () => {
     const page = read("../client/src/pages/ManagedClassPage.jsx");
     const heroImage = page.match(
-      /<img\s+src=\{c\.hero\.imageUrl\}[\s\S]*?\/>/,
+      /<ClassImage\s+src=\{c\.hero\.imageUrl\}[\s\S]*?\/>/,
     )?.[0];
 
     expect(heroImage).toBeTruthy();
     expect(heroImage).toContain('width="1920"');
     expect(heroImage).toContain('height="1080"');
-    expect(heroImage).toContain('fetchPriority="high"');
-    expect(heroImage).not.toContain('loading="lazy"');
+    expect(heroImage).toContain("eager");
   });
 
   it("lazy loads below-fold landing images with dimensions and async decoding", () => {
     const page = read("../client/src/pages/ManagedClassPage.jsx");
     const belowFoldSources = [
-      "c.story.imageUrl",
-      "c.solution.imageUrl",
-      "c.mentor.imageUrl",
-      "c.ebook.imageUrl",
+      { label: "story", pattern: /<ClassImage\s+[\s\S]*?c\.story\.imageUrl[\s\S]*?\/>/ },
+      { label: "solution", pattern: /<ClassImage\s+src=\{c\.solution\.imageUrl\}[\s\S]*?\/>/ },
+      { label: "mentor", pattern: /<ClassImage\s+src=\{c\.mentor\.imageUrl\}[\s\S]*?\/>/ },
+      { label: "ebook", pattern: /<ClassImage\s+src=\{c\.ebook\.imageUrl\}[\s\S]*?\/>/ },
     ];
 
     for (const source of belowFoldSources) {
-      const escaped = source.replaceAll(".", "\\.");
-      const image = page.match(
-        new RegExp(`<img\\s+src=\\{${escaped}\\}[\\s\\S]*?\\/>`),
-      )?.[0];
-      expect(image, source).toBeTruthy();
-      expect(image, source).toMatch(/width="\d+"/);
-      expect(image, source).toMatch(/height="\d+"/);
-      expect(image, source).toContain('loading="lazy"');
-      expect(image, source).toContain('decoding="async"');
+      const image = page.match(source.pattern)?.[0];
+      expect(image, source.label).toBeTruthy();
+      expect(image, source.label).toMatch(/width="\d+"/);
+      expect(image, source.label).toMatch(/height="\d+"/);
+      expect(image, source.label).not.toContain("eager");
     }
+  });
+
+  it("uses content visibility for long below-fold sections", () => {
+    const css = read("../client/src/index.css");
+    expect(css).toMatch(/\.class-deferred-section\s*\{[^}]*content-visibility:\s*auto/s);
+    expect(css).toMatch(/\.class-deferred-section\s*\{[^}]*contain-intrinsic-size:/s);
   });
 
   it("keeps YouTube behind a click-to-play facade", () => {

@@ -60,3 +60,23 @@ export function FormField({ label, name, className = "", ...inputProps }) {
     </label>
   );
 }
+
+/** Shared image atom for managed class pages. */
+export function ClassImage({
+  eager = false,
+  width,
+  height,
+  decoding = "async",
+  ...imageProps
+}) {
+  return (
+    <img
+      width={width}
+      height={height}
+      loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : "auto"}
+      decoding={decoding}
+      {...imageProps}
+    />
+  );
+}

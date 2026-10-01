@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { ArrowRight, CalendarDays, Check, Gift, Pencil, Sparkles, Video } from "lucide-react";
+import { ArrowRight, CalendarDays, Gift, Pencil, Sparkles, Video } from "lucide-react";
 import {
   DEFAULT_CLASS_RECORDS,
   getSharedClassConfig,
@@ -12,8 +12,10 @@ import ClassVideo from "../components/class/ClassVideo.jsx";
 import ClassFaq from "../components/class/ClassFaq.jsx";
 import ClassSeo from "../components/class/ClassSeo.jsx";
 import ClassCheckoutSection from "../components/class/ClassCheckoutSection.jsx";
+import ClassManagedListSection from "../components/class/ClassManagedListSection.jsx";
 import {
   BenefitItem,
+  ClassImage,
   EventInfo,
   PriceDisplay,
 } from "../components/class/ClassUi.jsx";
@@ -29,35 +31,6 @@ const fallbackRecord = slug => {
   return record ? { ...record, id: 0 } : null;
 };
 const active = items => (items || []).filter(item => item.enabled);
-
-function ManagedListSection({
-  className = "",
-  eyebrow,
-  title,
-  items,
-  icon = Check,
-}) {
-  const Icon = icon;
-  const visible = active(items);
-  if (!visible.length) return null;
-  return (
-    <section className={`class-managed-list section-shell ${className}`}>
-      <p className="eyebrow">{eyebrow}</p>
-      <h2>{title}</h2>
-      <div className="class-managed-list__grid">
-        {visible.map(item => (
-          <article key={item.id}>
-            <Icon size={20} />
-            <div>
-              <h3>{item.title}</h3>
-              {item.description && <p>{item.description}</p>}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 export default function ManagedClassPage({ slug }) {
   const preview =
@@ -116,7 +89,7 @@ export default function ManagedClassPage({ slug }) {
   if (!record || !c || !shared) {
     return (
       <div className="site-page class-detail-page">
-        <Navbar />
+        <Navbar showCta={false} />
         <main className="class-state section-shell">
           <h1>{loading ? "Memuat kelas…" : "Kelas tidak ditemukan"}</h1>
           {preview && previewQuery.error && (
@@ -183,7 +156,7 @@ export default function ManagedClassPage({ slug }) {
       </section>
     ),
     painPoints: visibility.painPoints && (
-      <ManagedListSection
+      <ClassManagedListSection
         key="painPoints"
         eyebrow="Tantangan"
         title="Apa yang sering menghambat kita untuk mulai?"
@@ -191,7 +164,7 @@ export default function ManagedClassPage({ slug }) {
       />
     ),
     story: visibility.story && (
-      <section key="story" className="class-detail-split section-shell">
+      <section key="story" className="class-detail-split class-deferred-section section-shell">
         <div className="class-detail-split__copy">
           <h2>{c.story.title}</h2>
           {c.story.paragraphs.map((p, i) => (
@@ -200,7 +173,7 @@ export default function ManagedClassPage({ slug }) {
           {c.story.highlight && <h3>{c.story.highlight}</h3>}
         </div>
         <div className="class-detail-split__media">
-          <img
+          <ClassImage
             src={
               slug === "kelas-solopreneur"
                 ? "/assets/starhustler-portrait-section-1.svg"
@@ -209,8 +182,6 @@ export default function ManagedClassPage({ slug }) {
             alt={c.story.title}
             width="1440"
             height="1920"
-            loading="lazy"
-            decoding="async"
           />
         </div>
       </section>
@@ -237,7 +208,7 @@ export default function ManagedClassPage({ slug }) {
     solution: visibility.solution && (
       <section
         key="solution"
-        className="class-detail-split class-detail-split--reverse section-shell"
+        className="class-detail-split class-detail-split--reverse class-deferred-section section-shell"
       >
         <div className="class-detail-split__copy">
           <h2>{c.solution.title}</h2>
@@ -246,19 +217,17 @@ export default function ManagedClassPage({ slug }) {
           ))}
         </div>
         <div className="class-detail-split__media">
-          <img
+          <ClassImage
             src={c.solution.imageUrl}
             alt={c.solution.title}
             width="1536"
             height="1920"
-            loading="lazy"
-            decoding="async"
           />
         </div>
       </section>
     ),
     benefits: visibility.benefits && (
-      <section key="benefits" className="class-detail-benefits">
+      <section key="benefits" className="class-detail-benefits class-deferred-section">
         <div className="section-shell">
           <h2>Kalau begitu, apa yang akan saya dapatkan?</h2>
           <div className="benefit-grid">
@@ -271,7 +240,7 @@ export default function ManagedClassPage({ slug }) {
       </section>
     ),
     curriculum: visibility.curriculum && (
-      <ManagedListSection
+      <ClassManagedListSection
         key="curriculum"
         className="class-managed-list--soft"
         eyebrow="Kurikulum"
@@ -280,7 +249,7 @@ export default function ManagedClassPage({ slug }) {
       />
     ),
     bonuses: visibility.bonuses && (
-      <ManagedListSection
+      <ClassManagedListSection
         key="bonuses"
         className="class-managed-list--centered"
         eyebrow="Bonus"
@@ -290,7 +259,7 @@ export default function ManagedClassPage({ slug }) {
       />
     ),
     mentor: visibility.mentor && (
-      <section key="mentor" className="class-detail-mentor section-shell">
+      <section key="mentor" className="class-detail-mentor class-deferred-section section-shell">
         <div>
           <p className="eyebrow">Tentang Pengajar</p>
           <h2>{c.mentor.headline}</h2>
@@ -300,13 +269,11 @@ export default function ManagedClassPage({ slug }) {
           <p>{c.mentor.title}</p>
         </div>
         <div className="class-detail-mentor__card">
-          <img
+          <ClassImage
             src={c.mentor.imageUrl}
             alt={c.mentor.name}
             width="1920"
             height="1080"
-            loading="lazy"
-            decoding="async"
           />
           <h3>{c.mentor.proofLabel}</h3>
         </div>
@@ -314,7 +281,7 @@ export default function ManagedClassPage({ slug }) {
       </section>
     ),
     testimonials: visibility.testimonials && (
-      <ManagedListSection
+      <ClassManagedListSection
         key="testimonials"
         eyebrow="Cerita Peserta"
         title="Pengalaman peserta"
@@ -324,7 +291,7 @@ export default function ManagedClassPage({ slug }) {
     pricing: visibility.pricing && (
       <section
         key="pricing"
-        className="class-detail-promo section-shell"
+        className="class-detail-promo class-deferred-section section-shell"
         id="pricing"
       >
         <div>
@@ -342,13 +309,11 @@ export default function ManagedClassPage({ slug }) {
           </div>
         </div>
         {c.ebook.enabled && (
-          <img
+          <ClassImage
             src={c.ebook.imageUrl}
             alt={c.ebook.title}
             width="1920"
             height="1440"
-            loading="lazy"
-            decoding="async"
           />
         )}
       </section>
@@ -393,7 +358,7 @@ export default function ManagedClassPage({ slug }) {
         paymentUrl={checkoutUrl}
         onPaymentClick={handlePaymentClick}
       />
-      <Navbar />
+      <Navbar showCta={false} />
       <main>
         {visibility.hero !== false && (
           <section className="class-detail-hero">
@@ -425,13 +390,12 @@ export default function ManagedClassPage({ slug }) {
               {cta({ context: "hero" })}
             </div>
             <div className="class-detail-hero__art">
-              <img
+              <ClassImage
                 src={c.hero.imageUrl}
                 alt={c.hero.headline}
                 width="1920"
                 height="1080"
-                fetchPriority="high"
-                decoding="async"
+                eager
               />
             </div>
           </section>

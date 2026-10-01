@@ -15,7 +15,7 @@ export default function ClassCheckoutSection({ record, slug, content }) {
   const shared = getSharedClassConfig(record.name, content);
 
   return (
-    <section className="class-checkout-section">
+    <section className="class-checkout-section class-deferred-section">
       <div className="section-shell class-checkout-section__layout">
         <form id="daftar-kelas" className="registration-card class-checkout-card" onSubmit={event => {
           event.preventDefault();

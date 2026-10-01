@@ -7,7 +7,7 @@ import { ArrowRight, LockKeyhole } from "lucide-react";
 // @ts-ignore no declaration file for this JSX module
 import { Button } from "../client/src/components/PrimaryButton";
 // @ts-ignore no declaration file for this JSX module
-import { BenefitItem, EventInfo, FormField, PriceDisplay } from "../client/src/components/class/ClassUi";
+import { BenefitItem, ClassImage, EventInfo, FormField, PriceDisplay } from "../client/src/components/class/ClassUi";
 
 const h = React.createElement;
 
@@ -75,6 +75,21 @@ describe("class landing reusable UI", () => {
     expect(html).toContain('name="email"');
   });
 
+  it("keeps image loading policy inside the shared class image atom", () => {
+    const lazyImage = renderToStaticMarkup(
+      h(ClassImage, { src: "/below-fold.webp", alt: "Materi", width: 800, height: 600 })
+    );
+    const heroImage = renderToStaticMarkup(
+      h(ClassImage, { src: "/hero.webp", alt: "Hero", width: 1920, height: 1080, eager: true })
+    );
+
+    expect(lazyImage).toContain('loading="lazy"');
+    expect(lazyImage).toContain('fetchPriority="auto"');
+    expect(lazyImage).toContain('width="800"');
+    expect(heroImage).toContain('loading="eager"');
+    expect(heroImage).toContain('fetchPriority="high"');
+  });
+
   it("keeps CTA content unbroken on desktop and narrow mobile layouts", () => {
     const css = readFileSync(
       new URL("../client/src/index.css", import.meta.url),
@@ -88,6 +103,20 @@ describe("class landing reusable UI", () => {
     expect(css).toMatch(/\.class-checkout-card__product\s*\{[^}]*text-align:center;/s);
     expect(css).toMatch(/\.class-checkout-card__product \.price-display\s*\{[^}]*align-items:center;[^}]*text-align:center;/s);
     expect(css).toMatch(/\.class-checkout-card__product \.event-info--compact\s*\{[^}]*text-align:center;[^}]*width:100%;/s);
+  });
+
+  it("can hide the global join CTA on managed class landing pages", () => {
+    const navbar = readFileSync(
+      new URL("../client/src/components/Navbar.jsx", import.meta.url),
+      "utf8"
+    );
+    const page = readFileSync(
+      new URL("../client/src/pages/ManagedClassPage.jsx", import.meta.url),
+      "utf8"
+    );
+    expect(navbar).toContain("showCta = true");
+    expect(navbar).toContain("{showCta &&");
+    expect(page.match(/<Navbar showCta=\{false\} \/>/g)).toHaveLength(2);
   });
 
   it("keeps registration anchor scrolling active when another listener prevents the default link action", () => {
