@@ -10,6 +10,19 @@ import { handleDokuWebhook } from "./commerce.js";
 export function createApp() {
   const app = express();
   app.disable("x-powered-by");
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowedOrigin = process.env.PUBLIC_APP_URL || "https://www.starthustler.com";
+    if (origin === allowedOrigin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+      res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    }
+    if (req.method === "OPTIONS") return res.sendStatus(204);
+    next();
+  });
   app.use((_req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
