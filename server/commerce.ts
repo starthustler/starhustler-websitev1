@@ -196,7 +196,6 @@ export async function getPublicOrderStatus(publicId: string) {
 async function deliverPaidOrder(
   detail: NonNullable<Awaited<ReturnType<typeof db.getOrderDetailsByPublicId>>>,
   setupToken: string,
-  eventKey: string,
 ) {
   const content = normalizeClassContent(JSON.parse(detail.classRow.contentJson));
   const setupUrl = `${publicAppUrl()}/akun/aktivasi/${setupToken}`;
@@ -213,9 +212,15 @@ async function deliverPaidOrder(
     }),
     `Pembayaran berhasil — ${detail.classRow.name}`
   );
+}
+
+export async function sendPurchaseForPaidOrder(
+  detail: NonNullable<Awaited<ReturnType<typeof db.getOrderDetailsByPublicId>>>,
+) {
+  const eventId = `purchase:${detail.order.invoiceNumber}`;
   await sendMetaEvent({
     eventName: "Purchase",
-    eventId: eventKey,
+    eventId,
     sourceUrl: `${publicAppUrl()}/pembayaran/${detail.order.publicId}`,
     customData: {
       content_name: detail.classRow.name,
@@ -260,7 +265,13 @@ async function applyDokuStatus(input: {
     });
   }
   if (result.kind === "paid") {
-    await deliverPaidOrder(input.detail, result.setupToken, input.eventKey);
+    await deliverPaidOrder(input.detail, result.setupToken);
+  }
+  // A provider retry can arrive after the order was already marked paid.
+  // Re-send the server-side Purchase with a stable event ID; Meta deduplicates
+  // retries while still allowing a previously failed delivery to be recovered.
+  if (result.kind === "paid" || result.kind === "already_paid") {
+    await sendPurchaseForPaidOrder(input.detail);
   }
   return result;
 }

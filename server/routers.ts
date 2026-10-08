@@ -23,6 +23,7 @@ import {
   getPublicOrderStatus,
   reconcileRecentPendingOrders,
   resendEnrollmentConfirmation,
+  sendPurchaseForPaidOrder,
   sendResendTest,
 } from "./commerce.js";
 import {
@@ -416,6 +417,16 @@ export const appRouter = router({
     resendEnrollmentEmail: adminProcedure
       .input(z.object({ orderId: z.string().uuid() }))
       .mutation(({ input }) => resendEnrollmentConfirmation(input.orderId)),
+    replayMetaPurchase: adminProcedure
+      .input(z.object({ orderId: z.string().uuid() }))
+      .mutation(async ({ input }) => {
+        const detail = await db.getOrderDetailsByPublicId(input.orderId);
+        if (!detail) throw new TRPCError({ code: "NOT_FOUND", message: "Order tidak ditemukan." });
+        if (detail.order.status !== "paid") {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Purchase hanya dapat dikirim untuk order paid." });
+        }
+        return sendPurchaseForPaidOrder(detail);
+      }),
   }),
   blogAdmin: router({
     list: adminProcedure.query(() => db.listAllBlogPosts()),

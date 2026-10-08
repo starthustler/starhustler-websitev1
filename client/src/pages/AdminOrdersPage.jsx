@@ -25,6 +25,7 @@ export default function AdminOrdersPage() {
   const logs = trpc.commerceAdmin.paymentLogs.useQuery({ limit: 25 }, { retry: false, refetchInterval: 30_000 });
   const exportOrders = trpc.commerceAdmin.exportOrders.useQuery(undefined, { enabled: false, retry: false });
   const resend = trpc.commerceAdmin.resendEnrollmentEmail.useMutation({ onSuccess: () => utils.commerceAdmin.orders.invalidate() });
+  const replayPurchase = trpc.commerceAdmin.replayMetaPurchase.useMutation();
   const refresh = () => { orders.refetch(); logs.refetch(); };
   const summary = orders.data?.summary || { paid: 0, pending: 0, failed: 0 };
   const downloadOrders = async () => {
@@ -62,7 +63,7 @@ export default function AdminOrdersPage() {
           <td data-label="Kelas">{row.className}</td><td data-label="Nominal">{formatRupiah(row.amount)}</td>
           <td data-label="Pembayaran"><span className={`order-status order-status--${row.status}`}>{orderLabels[row.status] || row.status}</span>{row.status === "pending_payment" && row.paymentUrl && <a className="admin-inline-action" href={row.paymentUrl} target="_blank" rel="noreferrer">Buka checkout</a>}</td>
           <td data-label="Waktu Order"><time>{new Date(row.createdAt).toLocaleString("id-ID")}</time>{row.paidAt && <small>Paid: {new Date(row.paidAt).toLocaleString("id-ID")}</small>}</td>
-          <td data-label="Status Email"><EmailStatus delivery={row.emailDelivery}/>{row.status === "paid" && <button className="admin-inline-action" type="button" disabled={resend.isPending} onClick={() => resend.mutate({ orderId: row.publicId })}>Kirim ulang akses</button>}</td>
+          <td data-label="Status Email"><EmailStatus delivery={row.emailDelivery}/>{row.status === "paid" && <><button className="admin-inline-action" type="button" disabled={resend.isPending} onClick={() => resend.mutate({ orderId: row.publicId })}>Kirim ulang akses</button><button className="admin-inline-action" type="button" disabled={replayPurchase.isPending} onClick={() => replayPurchase.mutate({ orderId: row.publicId })}>Kirim ulang Purchase Meta</button></>}</td>
         </tr>)}
         {!orders.isLoading && !orders.data?.items.length && <tr><td colSpan="9">Belum ada order.</td></tr>}
       </tbody></table></div>
