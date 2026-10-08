@@ -209,7 +209,7 @@ button { border:0; }
 .registration-card small { color:#7a8498; line-height:1.5; }
 .registration-error { background:#fff0f0; color:#a52222 !important; padding:12px; }
 .class-checkout-section { background:#f3f6fc; }
-.class-checkout-section__layout { align-items:center; display:flex; justify-content:center; padding-bottom:150px; padding-top:100px; }
+.class-checkout-section__layout { align-items:center; display:flex; justify-content:center; padding-bottom:64px; padding-top:64px; }
 .class-checkout-card { max-width:620px; scroll-margin-top:112px; width:100%; }
 .class-checkout-card__product { background:var(--navy); color:#fff; margin:-38px -38px 5px; padding:28px 38px; text-align:center; }
 .class-checkout-card__product span,.class-checkout-card__product small { color:rgba(255,255,255,.72); display:block; font-size:13px; font-weight:700; }
@@ -240,7 +240,7 @@ button { border:0; }
   .registration-summary > p { font-size:16px; }
   .registration-price { align-items:center; }.registration-trust { justify-content:center; }
   .registration-card { padding:28px 22px; width:100%; }
-  .class-checkout-section__layout { padding-bottom:132px; padding-top:68px; }
+  .class-checkout-section__layout { padding-bottom:40px; padding-top:40px; }
   .class-checkout-card { text-align:left; }
   .class-checkout-card__product { margin:-28px -22px 5px; padding:25px 22px; text-align:center; }
   .payment-status-shell { min-height:560px; padding:40px 16px; }
@@ -1235,8 +1235,8 @@ button { border:0; }
     padding-top: 55px;
   }
   .class-managed-list {
-    padding-bottom: 67px;
-    padding-top: 67px;
+    padding-bottom: 40px;
+    padding-top: 40px;
   }
   .class-managed-list--soft {
     padding-left: 20px;
@@ -1501,4 +1501,22 @@ button { border:0; }
   .admin-table td {
     grid-template-columns: 82px minmax(0, 1fr);
   }
+}
+
+/* Keep mobile class sections compact without reducing form touch targets. */
+@media (max-width: 760px) {
+  .class-detail-page .class-detail-hero { padding-top:40px; padding-bottom:40px; }
+  .class-detail-page .class-detail-intro,
+  .class-detail-page .class-detail-split,
+  .class-detail-page .class-detail-calculation,
+  .class-detail-page .class-detail-mentor,
+  .class-detail-page .class-detail-ebook,
+  .class-detail-page .class-detail-about,
+  .class-detail-page .class-detail-promo,
+  .class-detail-page .class-faq { padding-top:40px; padding-bottom:40px; }
+  .class-detail-page .class-detail-benefits { padding:40px 0; }
+  .class-detail-page .class-detail-intro__grid { margin-top:32px; gap:28px; }
+  .class-detail-page .class-managed-list__grid { margin-top:28px; }
+  .class-detail-page .class-detail-mentor { gap:28px; }
+  .class-detail-page .center-action { margin-top:28px; }
 }

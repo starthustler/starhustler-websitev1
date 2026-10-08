@@ -289,7 +289,6 @@ export default function ManagedClassPage({ slug }) {
           />
           <h3>{c.mentor.proofLabel}</h3>
         </div>
-        <div className="center-action">{cta({ context: "section" })}</div>
       </section>
     ),
     testimonials: visibility.testimonials && (
