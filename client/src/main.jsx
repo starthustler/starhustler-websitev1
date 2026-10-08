@@ -10,9 +10,8 @@ import "./index.css";
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
 });
-const apiBaseUrl = import.meta.env.PROD
-  ? "https://api.starthustler.com"
-  : (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const configuredApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").replace(/\/$/, "");
+const apiBaseUrl = configuredApiBaseUrl || (import.meta.env.PROD ? "https://api.starthustler.com" : "");
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
