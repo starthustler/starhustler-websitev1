@@ -4,6 +4,15 @@
   },
   "headers": [
     {
+      "source": "/",
+      "headers": [
+        {
+          "key": "X-StartHustler-Cache-Refresh",
+          "value": "2026-10-08"
+        }
+      ]
+    },
+    {
       "source": "/assets/(.*)",
       "headers": [
         {
